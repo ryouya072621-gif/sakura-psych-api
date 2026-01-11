@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>さくら会 心理診断 - 管理画面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --sakura-pink: #F8BBD9;
+            --sakura-pink-light: #FCE4EC;
+            --sakura-pink-dark: #E91E8C;
+            --sakura-accent: #D81B60;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #FFF5F8;
+            --white: #fff;
+            --shadow: 0 4px 15px rgba(233, 30, 140, 0.15);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #fff 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.7;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .header {
+            max-width: 1200px;
+            margin: 0 auto 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: var(--sakura-accent);
+            font-size: 1.6rem;
+            margin: 0;
+        }
+
+        .card {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: var(--white);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            color: var(--sakura-accent);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--sakura-pink);
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filters select, .filters input {
+            padding: 10px 15px;
+            border: 2px solid var(--sakura-pink);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--sakura-pink-dark) 0%, var(--sakura-accent) 100%);
+            border: none;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(233, 30, 140, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--sakura-accent);
+            border: 2px solid var(--sakura-accent);
+        }
+
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        .table-container { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--sakura-pink);
+        }
+
+        th {
+            background: var(--sakura-pink-light);
+            color: var(--sakura-accent);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        tr:hover { background: var(--sakura-pink-light); }
+
+        .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--sakura-accent);
+            color: white;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .stress-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .stress-high { background: var(--success); }
+        .stress-medium { background: var(--warning); color: #333; }
+        .stress-low { background: var(--danger); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, var(--sakura-pink-light) 0%, #fff 100%);
+            border-bottom: 2px solid var(--sakura-pink);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .modal-header h3 { margin: 0; color: var(--sakura-accent); }
+
+        .modal-close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .modal-body { padding: 25px; }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .detail-section {
+            background: var(--sakura-pink-light);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .detail-section h4 {
+            color: var(--sakura-accent);
+            margin: 0 0 15px 0;
+            font-size: 1rem;
+        }
+
+        .detail-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .detail-section li {
+            padding: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .detail-section li::before {
+            content: "●";
+            position: absolute;
+            left: 0;
+            color: var(--sakura-accent);
+            font-size: 10px;
+        }
+
+        .axis-bar {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .axis-name {
+            min-width: 60px;
+            font-weight: bold;
+            color: var(--sakura-accent);
+        }
+
+        .axis-level-bar {
+            flex: 1;
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .axis-level-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sakura-pink), var(--sakura-accent));
+            border-radius: 12px;
+            transition: width 0.5s;
+        }
+
+        .axis-level-label {
+            min-width: 80px;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        .stress-meter-large {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .stress-bar-large {
+            flex: 1;
+            height: 30px;
+            background: linear-gradient(90deg, #ffcccc 0%, #ffd700 50%, #90EE90 100%);
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .stress-indicator {
+            position: absolute;
+            top: -5px;
+            width: 20px;
+            height: 40px;
+            background: var(--sakura-accent);
+            border-radius: 10px;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transform: translateX(-50%);
+        }
+
+        .stress-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--sakura-accent);
+            min-width: 80px;
+        }
+
+        .hidden { display: none !important; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon { font-size: 4rem; margin-bottom: 20px; }
+
+        .tag {
+            display: inline-block;
+            padding: 3px 10px;
+            background: var(--sakura-pink);
+            color: var(--sakura-accent);
+            border-radius: 10px;
+            font-size: 11px;
+            margin: 2px;
+        }
+
+        .chatgpt-box {
+            background: #f0f7ff;
+            border: 2px solid #0078d4;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .chatgpt-box h4 {
+            color: #0078d4;
+            margin: 0 0 15px 0;
+        }
+
+        .chatgpt-box textarea {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        .chatgpt-box .btn {
+            margin-top: 10px;
+            background: #0078d4;
+        }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .filters { flex-direction: column; }
+            .filters select, .filters input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🌸 さくら会 心理診断 - 管理画面</h1>
+    <a href="/" class="btn btn-secondary">← 診断画面へ</a>
+</div>
+
+<div class="card">
+    <h2>📋 診断結果一覧</h2>
+    
+    <div class="filters">
+        <select id="filterCompany">
+            <option value="">すべての所属</option>
+        </select>
+        <input type="text" id="filterName" placeholder="名前で検索...">
+        <button class="btn" onclick="loadResults()">🔍 検索</button>
+        <button class="btn btn-secondary" onclick="clearFilters()">クリア</button>
+    </div>
+
+    <div class="table-container">
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>診断日時</th>
+                    <th>名前</th>
+                    <th>所属</th>
+                    <th>部署</th>
+                    <th>タイプ</th>
+                    <th>ストレス耐性</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="resultsBody">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="emptyState" class="empty-state hidden">
+        <div class="empty-state-icon">📊</div>
+        <p>診断結果がありません</p>
+    </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div id="detailModal" class="modal-overlay hidden">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">詳細情報</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- 動的に挿入 -->
+        </div>
+    </div>
+</div>
+
+<script>
+const API_BASE = "";
+
+// 初期化
+document.addEventListener("DOMContentLoaded", () => {
+    loadCompanyCategories();
+    loadResults();
+});
+
+async function loadCompanyCategories() {
+    try {
+        const response = await fetch(`${API_BASE}/api/company_categories`);
+        const data = await response.json();
+        if (data.ok) {
+            const select = document.getElementById("filterCompany");
+            data.categories.forEach(cat => {
+                const option = document.createElement("option");
+                option.value = cat;
+                option.textContent = cat;
+                select.appendChild(option);
+            });
+        }
+    } catch (e) {
+        console.error("Failed to load company categories:", e);
+    }
+}
+
+async function loadResults() {
+    const company = document.getElementById("filterCompany").value;
+    const nameFilter = document.getElementById("filterName").value.toLowerCase();
+    
+    let url = `${API_BASE}/api/results`;
+    if (company) {
+        url += `?company=${encodeURIComponent(company)}`;
+    }
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (!data.ok) {
+            console.error("Failed to load results:", data.error);
+            return;
+        }
+
+        let results = data.results;
+        
+        // 名前フィルタ
+        if (nameFilter) {
+            results = results.filter(r => 
+                r.name.toLowerCase().includes(nameFilter)
+            );
+        }
+
+        renderResults(results);
+    } catch (e) {
+        console.error("Failed to load results:", e);
+    }
+}
+
+function renderResults(results) {
+    const tbody = document.getElementById("resultsBody");
+    const emptyState = document.getElementById("emptyState");
+    
+    if (results.length === 0) {
+        tbody.innerHTML = "";
+        emptyState.classList.remove("hidden");
+        return;
+    }
+
+    emptyState.classList.add("hidden");
+    
+    tbody.innerHTML = results.map(r => `
+        <tr>
+            <td>${formatDate(r.created_at)}</td>
+            <td><strong>${escapeHtml(r.name)}</strong></td>
+            <td><span class="tag">${escapeHtml(r.company) || "-"}</span></td>
+            <td>${escapeHtml(r.department) || "-"}</td>
+            <td><span class="type-badge">${getTypeNameJP(r.type)}</span></td>
+            <td>${renderStressBadge(r.stress_tolerance)}</td>
+            <td>
+                <button class="btn btn-sm" onclick="viewDetail('${r.id}')">詳細</button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function renderStressBadge(value) {
+    const v = value || 5;
+    let cls = "stress-medium";
+    if (v >= 7) cls = "stress-high";
+    else if (v <= 3) cls = "stress-low";
+    return `<span class="stress-badge ${cls}">${v}/10</span>`;
+}
+
+function getTypeNameJP(type) {
+    const map = { "S": "和型", "P": "陽型", "C": "理型", "D": "導型" };
+    return map[type] || type || "-";
+}
+
+function formatDate(isoString) {
+    if (!isoString) return "-";
+    const d = new Date(isoString);
+    return `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;");
+}
+
+function clearFilters() {
+    document.getElementById("filterCompany").value = "";
+    document.getElementById("filterName").value = "";
+    loadResults();
+}
+
+async function viewDetail(id) {
+    try {
+        const response = await fetch(`${API_BASE}/api/results/${id}`);
+        const data = await response.json();
+        
+        if (!data.ok) {
+            alert("詳細情報の取得に失敗しました");
+            return;
+        }
+
+        renderDetailModal(data.data);
+        document.getElementById("detailModal").classList.remove("hidden");
+    } catch (e) {
+        console.error("Failed to load detail:", e);
+        alert("詳細情報の取得に失敗しました");
+    }
+}
+
+function renderDetailModal(data) {
+    const meta = data.meta || {};
+    const report = data.report || {};
+    const result = data.result || {};
+    const hr = report.hr_insights || {};
+
+    document.getElementById("modalTitle").textContent = 
+        `${meta.name || "不明"} さんの詳細情報`;
+
+    const axisHtml = (report.axis_info || []).map(a => {
+        const pct = (a.level_index + 1) * 20;
+        return `
+            <div class="axis-bar">
+                <span class="axis-name">${a.name}</span>
+                <div class="axis-level-bar">
+                    <div class="axis-level-fill" style="width: ${pct}%"></div>
+                </div>
+                <span class="axis-level-label">${a.level}</span>
+            </div>
+        `;
+    }).join("");
+
+    const stressPct = ((report.stress_tolerance || 5) - 1) / 9 * 100;
+
+    const chatgptPrompt = generateChatGPTPrompt(data);
+
+    document.getElementById("modalBody").innerHTML = `
+        <div class="detail-grid">
+            <!-- 基本情報 -->
+            <div class="detail-section">
+                <h4>👤 基本情報</h4>
+                <p><strong>名前:</strong> ${escapeHtml(meta.name)}</p>
+                <p><strong>メール:</strong> ${escapeHtml(meta.email)}</p>
+                <p><strong>所属:</strong> ${escapeHtml(meta.company) || "-"}</p>
+                <p><strong>部署:</strong> ${escapeHtml(meta.department) || "-"}</p>
+                <p><strong>診断日:</strong> ${formatDate(data.created_at)}</p>
+                <p><strong>タイプ:</strong> <span class="type-badge">${getTypeNameJP(result.type)}</span></p>
+            </div>
+
+            <!-- 一言まとめ -->
+            <div class="detail-section">
+                <h4>💬 一言でまとめると</h4>
+                <p style="font-size: 1.1rem; font-weight: bold; color: var(--sakura-accent);">
+                    ${escapeHtml(report.one_liner)}
+                </p>
+            </div>
+        </div>
+
+        <!-- 4軸グラフ -->
+        <div class="detail-section" style="margin-top: 20px;">
+            <h4>📊 4つの特性</h4>
+            ${axisHtml}
+        </div>
+
+        <!-- ストレス耐性 -->
+        <div class="detail-section" style="margin-top: 20px;">
+            <h4>🛡️ ストレス耐性（10段階）</h4>
+            <div class="stress-meter-large">
+                <span class="stress-value">${report.stress_tolerance || 5}/10</span>
+                <div class="stress-bar-large">
+                    <div class="stress-indicator" style="left: ${stressPct}%"></div>
+                </div>
+            </div>
+            <p style="font-size: 13px; color: var(--text-light);">
+                ${getStressComment(report.stress_tolerance)}
+            </p>
+        </div>
+
+        <div class="detail-grid" style="margin-top: 20px;">
+            <!-- 強み -->
+            <div class="detail-section">
+                <h4>💪 強み</h4>
+                <ul>
+                    ${(report.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join("")}
+                </ul>
+            </div>
+
+            <!-- 弱み -->
+            <div class="detail-section">
+                <h4>⚠️ 注意点</h4>
+                <ul>
+                    ${(report.weaknesses || []).map(w => `<li>${escapeHtml(w)}</li>`).join("")}
+                </ul>
+            </div>
+        </div>
+
+        <div class="detail-grid" style="margin-top: 20px;">
+            <!-- 良い接し方 -->
+            <div class="detail-section">
+                <h4>✅ 良い接し方</h4>
+                <ul>
+                    ${(hr.good_approach || []).map(g => `<li>${escapeHtml(g)}</li>`).join("")}
+                </ul>
+            </div>
+
+            <!-- 悪い接し方 -->
+            <div class="detail-section">
+                <h4>❌ 避けるべき接し方</h4>
+                <ul>
+                    ${(hr.bad_approach || []).map(b => `<li>${escapeHtml(b)}</li>`).join("")}
+                </ul>
+            </div>
+        </div>
+
+        <div class="detail-grid" style="margin-top: 20px;">
+            <!-- 面接で聞くべき質問 -->
+            <div class="detail-section">
+                <h4>❓ 気をつけて聞くべき質問</h4>
+                <ul>
+                    ${(hr.interview_questions || []).map(q => `<li>${escapeHtml(q)}</li>`).join("")}
+                </ul>
+            </div>
+
+            <!-- 職場適応の注意点 -->
+            <div class="detail-section">
+                <h4>📋 職場適応における注意点</h4>
+                <ul>
+                    ${(hr.adaptation_notes || []).map(n => `<li>${escapeHtml(n)}</li>`).join("")}
+                </ul>
+            </div>
+        </div>
+
+        <!-- 早期離職リスクサイン -->
+        <div class="detail-section" style="margin-top: 20px;">
+            <h4>🚨 早期離職のリスクサイン</h4>
+            <ul>
+                ${(hr.turnover_risks || []).map(r => `<li>${escapeHtml(r)}</li>`).join("")}
+            </ul>
+        </div>
+
+        <!-- ストレス関連 -->
+        <div class="detail-grid" style="margin-top: 20px;">
+            <div class="detail-section">
+                <h4>😰 ストレスを感じやすい場面</h4>
+                <ul>
+                    ${(report.stress_situations || []).map(s => `<li>${escapeHtml(s)}</li>`).join("")}
+                </ul>
+            </div>
+
+            <div class="detail-section">
+                <h4>🌿 ストレス対処法</h4>
+                <ul>
+                    ${(report.stress_coping || []).map(c => `<li>${escapeHtml(c)}</li>`).join("")}
+                </ul>
+            </div>
+        </div>
+
+        <!-- 仕事スタイル -->
+        <div class="detail-section" style="margin-top: 20px;">
+            <h4>💼 仕事のスタイル</h4>
+            <div class="detail-grid">
+                <p><strong>協働:</strong> ${escapeHtml(report.work_style?.collaboration)}</p>
+                <p><strong>ペース:</strong> ${escapeHtml(report.work_style?.pace)}</p>
+                <p><strong>アプローチ:</strong> ${escapeHtml(report.work_style?.approach)}</p>
+                <p><strong>思考:</strong> ${escapeHtml(report.work_style?.thinking)}</p>
+            </div>
+        </div>
+
+        <!-- ChatGPT用プロンプト -->
+        <div class="chatgpt-box">
+            <h4>🤖 ChatGPTで相性診断をする</h4>
+            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
+                下記のプロンプトをChatGPTにコピペすると、他の候補者との相性診断ができます。
+            </p>
+            <textarea id="chatgptPrompt" readonly>${escapeHtml(chatgptPrompt)}</textarea>
+            <button class="btn" onclick="copyPrompt()">📋 コピーする</button>
+        </div>
+    `;
+}
+
+function getStressComment(value) {
+    const v = value || 5;
+    if (v >= 8) return "ストレス耐性が高く、プレッシャーに強いタイプです。";
+    if (v >= 6) return "平均的なストレス耐性があります。適度なサポートがあれば問題なく働けます。";
+    if (v >= 4) return "ストレスを感じやすい傾向があります。定期的なフォローが推奨されます。";
+    return "ストレス耐性が低めです。手厚いサポートと負荷管理が必要です。";
+}
+
+function generateChatGPTPrompt(data) {
+    const meta = data.meta || {};
+    const report = data.report || {};
+    const result = data.result || {};
+
+    return `以下の心理診断結果をもとに、この人物の特徴を分析し、職場での相性や適した役割についてアドバイスしてください。
+
+【診断対象者】
+名前: ${meta.name || "不明"}
+タイプ: ${getTypeNameJP(result.type)}（TYPE ${result.type}）
+ストレス耐性: ${report.stress_tolerance || 5}/10
+
+【4つの特性】
+${(report.axis_info || []).map(a => `・${a.name}: ${a.level}`).join("\n")}
+
+【一言でまとめると】
+${report.one_liner || ""}
+
+【強み】
+${(report.strengths || []).map(s => `・${s}`).join("\n")}
+
+【注意点】
+${(report.weaknesses || []).map(w => `・${w}`).join("\n")}
+
+【仕事スタイル】
+・協働: ${report.work_style?.collaboration || ""}
+・ペース: ${report.work_style?.pace || ""}
+・アプローチ: ${report.work_style?.approach || ""}
+・思考: ${report.work_style?.thinking || ""}
+
+---
+質問例:
+1. この人と相性が良いタイプはどのようなタイプですか？
+2. この人が最も活躍できる職種や役割は何ですか？
+3. この人をマネジメントする際のポイントは何ですか？`;
+}
+
+function copyPrompt() {
+    const textarea = document.getElementById("chatgptPrompt");
+    textarea.select();
+    document.execCommand("copy");
+    alert("コピーしました！ChatGPTに貼り付けてご利用ください。");
+}
+
+function closeModal() {
+    document.getElementById("detailModal").classList.add("hidden");
+}
+
+// モーダル外クリックで閉じる
+document.getElementById("detailModal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("detailModal")) {
+        closeModal();
+    }
+});
+
+// ESCキーで閉じる
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        closeModal();
+    }
+});
+</script>
+
+</body>
+</html>

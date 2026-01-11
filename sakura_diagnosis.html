@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>さくら会 心理診断テスト</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --sakura-pink: #F8BBD9;
+            --sakura-pink-light: #FCE4EC;
+            --sakura-pink-dark: #E91E8C;
+            --sakura-accent: #D81B60;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #FFF5F8;
+            --white: #fff;
+            --shadow: 0 4px 15px rgba(233, 30, 140, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #fff 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.7;
+            color: var(--text-dark);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--sakura-accent);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            max-width: 700px;
+            margin: 20px auto;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            color: var(--sakura-accent);
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--sakura-pink);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--text-dark);
+        }
+
+        input[type="text"],
+        input[type="email"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--sakura-pink);
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--sakura-accent);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 30px;
+            background: linear-gradient(135deg, var(--sakura-pink-dark) 0%, var(--sakura-accent) 100%);
+            border: none;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 30, 140, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--sakura-accent);
+            border: 2px solid var(--sakura-accent);
+        }
+
+        .btn-secondary:hover {
+            background: var(--sakura-pink-light);
+        }
+
+        .btn-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* 質問画面 */
+        .progress-bar {
+            height: 8px;
+            background: var(--sakura-pink-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sakura-pink-dark), var(--sakura-accent));
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: var(--sakura-accent);
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: var(--sakura-pink-light);
+            border-radius: 15px;
+        }
+
+        .answer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .answer-btn {
+            padding: 15px 20px;
+            background: var(--white);
+            border: 2px solid var(--sakura-pink);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .answer-btn:hover {
+            background: var(--sakura-pink-light);
+            border-color: var(--sakura-accent);
+            transform: translateX(5px);
+        }
+
+        .answer-scale {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 20px;
+            padding: 0 10px;
+        }
+
+        /* 結果画面 */
+        .result-header {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--sakura-pink-light) 0%, #fff 100%);
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 8px 25px;
+            background: var(--sakura-accent);
+            color: white;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .one-liner {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+
+        .axis-grid {
+            display: grid;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .axis-item {
+            padding: 15px;
+            background: var(--sakura-pink-light);
+            border-radius: 12px;
+        }
+
+        .axis-name {
+            font-weight: bold;
+            color: var(--sakura-accent);
+            font-size: 1.1rem;
+        }
+
+        .axis-level {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--sakura-accent);
+            color: white;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-left: 10px;
+        }
+
+        .axis-desc {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+
+        .section {
+            margin: 25px 0;
+            padding: 20px;
+            background: var(--sakura-pink-light);
+            border-radius: 15px;
+        }
+
+        .section h3 {
+            color: var(--sakura-accent);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .section li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .section li::before {
+            content: "●";
+            position: absolute;
+            left: 0;
+            color: var(--sakura-accent);
+        }
+
+        .work-style-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .work-style-item {
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .work-style-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .work-style-value {
+            font-weight: bold;
+            color: var(--sakura-accent);
+        }
+
+        .stress-meter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stress-bar {
+            flex: 1;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .stress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffcccc, #ff6b6b, #28a745);
+            transition: width 0.5s ease;
+        }
+
+        .stress-label {
+            font-weight: bold;
+            color: var(--sakura-accent);
+            min-width: 60px;
+        }
+
+        .email-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .email-success {
+            background: #e6fff0;
+            color: #008040;
+        }
+
+        .email-error {
+            background: #ffe6e6;
+            color: #cc0000;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ローディング */
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--sakura-pink);
+            border-top-color: var(--sakura-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* レスポンシブ */
+        @media (max-width: 600px) {
+            .card {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>🌸 さくら会 心理診断テスト</h1>
+<p class="subtitle">あなたの特性を知り、より良い職場環境づくりに活かします</p>
+
+<!-- ===========================
+      1. 入力画面
+=========================== -->
+<div class="card" id="startBox">
+    <h2>📝 受検者情報を入力してください</h2>
+
+    <label>お名前 <span style="color: #cc0000;">*</span></label>
+    <input id="userName" type="text" placeholder="例：田中 太郎">
+
+    <label>メールアドレス <span style="color: #cc0000;">*</span></label>
+    <input id="userEmail" type="email" placeholder="例：example@sakura-kai.jp">
+
+    <label>所属カテゴリ</label>
+    <select id="userCompany">
+        <option value="">選択してください</option>
+    </select>
+
+    <label>職種／部署</label>
+    <input id="userDept" type="text" placeholder="例：歯科衛生士、受付など">
+
+    <div class="btn-group">
+        <button class="btn" onclick="startTest()">診断を開始する →</button>
+    </div>
+</div>
+
+
+<!-- ===========================
+      2. 質問画面
+=========================== -->
+<div class="card hidden" id="questionBox">
+    <h2>💭 質問に答えてください</h2>
+    
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div class="progress-text" id="progressText">質問 1 / 72</div>
+    
+    <div class="question-text" id="questionText"></div>
+
+    <div class="answer-buttons">
+        <button class="answer-btn" onclick="answer(1)">まったく当てはまらない</button>
+        <button class="answer-btn" onclick="answer(2)">あまり当てはまらない</button>
+        <button class="answer-btn" onclick="answer(3)">どちらともいえない</button>
+        <button class="answer-btn" onclick="answer(4)">やや当てはまる</button>
+        <button class="answer-btn" onclick="answer(5)">とても当てはまる</button>
+    </div>
+
+    <div class="answer-scale">
+        <span>← 当てはまらない</span>
+        <span>当てはまる →</span>
+    </div>
+
+    <div class="btn-group" style="margin-top: 30px;">
+        <button class="btn btn-secondary" onclick="goBack()">← 戻る</button>
+    </div>
+</div>
+
+
+<!-- ===========================
+      3. 結果画面
+=========================== -->
+<div class="card hidden" id="resultBox">
+    <h2>📊 診断結果</h2>
+
+    <div id="loadingArea" class="loading">
+        <div class="spinner"></div>
+        <p>診断結果を計算中です...</p>
+    </div>
+
+    <div id="resultContent" class="hidden">
+        <!-- 結果ヘッダー -->
+        <div class="result-header">
+            <p><strong id="resultName"></strong> 様の診断結果</p>
+            <div class="type-badge" id="resultType"></div>
+            <p class="one-liner" id="resultOneLiner"></p>
+        </div>
+
+        <!-- 4軸の傾向 -->
+        <div class="section">
+            <h3>🎯 4つの特性</h3>
+            <div class="axis-grid" id="axisGrid"></div>
+        </div>
+
+        <!-- 強み -->
+        <div class="section">
+            <h3>💪 強み</h3>
+            <ul id="strengthsList"></ul>
+        </div>
+
+        <!-- 弱み・注意点 -->
+        <div class="section">
+            <h3>⚠️ 注意点</h3>
+            <ul id="weaknessesList"></ul>
+        </div>
+
+        <!-- ストレス -->
+        <div class="section">
+            <h3>😰 ストレスを感じやすい場面</h3>
+            <ul id="stressSituationsList"></ul>
+        </div>
+
+        <div class="section">
+            <h3>🌿 ストレス対処法</h3>
+            <ul id="stressCopingList"></ul>
+        </div>
+
+        <!-- 仕事スタイル -->
+        <div class="section">
+            <h3>💼 仕事のスタイル</h3>
+            <div class="work-style-grid" id="workStyleGrid"></div>
+        </div>
+
+        <!-- ストレス耐性 -->
+        <div class="section">
+            <h3>🛡️ ストレス耐性</h3>
+            <div class="stress-meter">
+                <span class="stress-label" id="stressLabel">5 / 10</span>
+                <div class="stress-bar">
+                    <div class="stress-fill" id="stressFill" style="width: 50%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- メール送信ステータス -->
+        <div id="emailStatus" class="email-status hidden"></div>
+
+        <!-- 操作ボタン -->
+        <div class="btn-group">
+            <button class="btn" onclick="sendEmail()">📩 結果をメールで受け取る</button>
+            <button class="btn btn-secondary" onclick="resetTest()">🔄 もう一度診断する</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+const API_ENDPOINT = "/api/sakura_psych";
+
+const questions = [
+    "緊張する場面でも落ち着いて行動できるほうだ。",
+    "競争がある環境のほうが力を発揮しやすい。",
+    "仕事とプライベートの切り替えが得意だ。",
+    "周りからの評価があると頑張れるタイプだ。",
+    "新しいことに挑戦する際、リスクを取れるほうだ。",
+    "プレッシャーがかかるほど燃えるタイプだ。",
+    "突然の予定変更にも柔軟に対応できる。",
+    "自分のミスを引きずらずに気持ちを切り替えられる。",
+    "忙しい状況でも冷静に優先順位をつけられる。",
+    "否定的な意見を受けても、すぐに立て直せるほうだ。",
+    "感情的にならずに、状況を客観的に見ることができる。",
+    "落ち込んでも、比較的早く気持ちを立て直せる。",
+    "大きな失敗をしても、次への学びとして前向きに捉えられる。",
+    "日々のストレスをうまく発散できていると感じる。",
+    "トラブルが起きても、焦らず対処できるほうだ。",
+    "他人の感情に引きずられすぎないほうだ。",
+    "予想外の問題が起きても、気持ちを乱さず対応できる。",
+    "仕事が立て込んでも、感情的に爆発することは少ない。",
+    "初対面の人ともすぐに打ち解けられる。",
+    "自分の意見をはっきり伝えることができる。",
+    "人前で話すことに対して、あまり抵抗がない。",
+    "相手が間違っていると思えば、きちんと指摘できる。",
+    "会議などで発言することに苦手意識はあまりない。",
+    "自分の主張を通すべき場面では、きちんと主張できる。",
+    "相手の顔色を気にしすぎずに話せる。",
+    "お願いごとや交渉ごとをすることに抵抗が少ない。",
+    "意見が対立しても、話し合いで解決しようとする。",
+    "リーダー役を任されることに抵抗は少ない。",
+    "自分の考えを分かりやすく整理して伝えられる。",
+    "相手にとって耳の痛いことも、必要であれば伝えられる。",
+    "相手にNOを言うべき場面では、きちんと断ることができる。",
+    "自分から新しいアイデアや提案をすることが多い。",
+    "目標に向かって計画的に行動するほうだ。",
+    "自分の成長のために、意図的にチャレンジすることがある。",
+    "興味のある分野について、主体的に情報収集するほうだ。",
+    "任された仕事以上のことに取り組むことがある。",
+    "周りの人を巻き込みながら物事を進めるのが得意だ。",
+    "求められていなくても、自分から仕事を探して動くことがある。",
+    "やるべきことを先延ばしにせず、すぐに取りかかるほうだ。",
+    "自分のキャリアについて主体的に考えて行動している。",
+    "新しい役割やポジションにも前向きに手を挙げられる。",
+    "自分から環境を変える行動をとることがある。",
+    "ストレスが続いても、粘り強く取り組めるほうだ。",
+    "忙しくても、パフォーマンスを大きく落とさずに働ける。",
+    "心身のコンディション管理を意識している。",
+    "仕事が重なっても、パンクせずに対処できるほうだ。",
+    "長期的にハードワークが続いても、なんとか乗り切ってきた。",
+    "ストレスを感じても、冷静に状況を整理して対処できる。",
+    "プレッシャーのかかる場面でも、自分をコントロールできる。",
+    "体調管理や睡眠時間の確保など、自己管理ができている。",
+    "精神的にタフだと言われることがある。",
+    "難しい状況でも「なんとかなる」と前向きに考えられる。",
+    "指示が曖昧でも、自分なりに考えて動けるほうだ。",
+    "イレギュラーな事態にも柔軟に対応できる。",
+    "新しい仕事を覚えるのは比較的早いほうだ。",
+    "状況に応じて、役割やスタンスを変えられる。",
+    "周囲の変化に合わせて、自分のやり方を調整できる。",
+    "複数の仕事を同時に回すことに慣れている。",
+    "急な依頼にも、できる範囲で対応しようとする。",
+    "変化の多い環境でも、あまりストレスを感じにくい。",
+    "予期せぬ問題が起きても、その場で工夫して乗り切れる。",
+    "新しいツールやシステムにも、比較的すぐ慣れられる。",
+    "同時並行で複数の案件を扱うことに抵抗が少ない。",
+    "コツコツと継続して取り組むことが得意だ。",
+    "細かな作業やチェックを丁寧に行うほうだ。",
+    "約束や期限はきちんと守るようにしている。",
+    "一度決めたルールや手順は、基本的に守るほうだ。",
+    "仕事を途中で投げ出さず、最後までやりきるほうだ。",
+    "日々のルーティン業務にも、安定して取り組める。",
+    "小さな改善を積み重ねていくことが好きだ。",
+    "ミスを減らすための工夫を自分なりに行っている。",
+    "相手の立場や状況を想像しながら行動するほうだ。",
+];
+
+let currentIndex = 0;
+let answers = [];
+let userData = {};
+let currentResultId = null;
+
+// 会社カテゴリを読み込み
+async function loadCompanyCategories() {
+    try {
+        const response = await fetch("/api/company_categories");
+        const data = await response.json();
+        if (data.ok) {
+            const select = document.getElementById("userCompany");
+            data.categories.forEach(cat => {
+                const option = document.createElement("option");
+                option.value = cat;
+                option.textContent = cat;
+                select.appendChild(option);
+            });
+        }
+    } catch (e) {
+        console.error("Failed to load company categories:", e);
+    }
+}
+
+// 初期化
+document.addEventListener("DOMContentLoaded", () => {
+    loadCompanyCategories();
+});
+
+function startTest() {
+    const name = document.getElementById("userName").value.trim();
+    const email = document.getElementById("userEmail").value.trim();
+    const company = document.getElementById("userCompany").value;
+    const dept = document.getElementById("userDept").value.trim();
+
+    if (!name || !email) {
+        alert("お名前とメールアドレスは必須です。");
+        return;
+    }
+
+    if (!email.includes("@")) {
+        alert("正しいメールアドレスを入力してください。");
+        return;
+    }
+
+    userData = { name, email, company, department: dept };
+    currentIndex = 0;
+    answers = [];
+
+    document.getElementById("startBox").classList.add("hidden");
+    document.getElementById("questionBox").classList.remove("hidden");
+    document.getElementById("resultBox").classList.add("hidden");
+
+    showQuestion();
+}
+
+function showQuestion() {
+    const progress = ((currentIndex) / questions.length) * 100;
+    document.getElementById("progressFill").style.width = progress + "%";
+    document.getElementById("progressText").innerText = 
+        `質問 ${currentIndex + 1} / ${questions.length}`;
+    document.getElementById("questionText").innerText = questions[currentIndex];
+}
+
+function answer(value) {
+    answers.push(Number(value));
+    currentIndex++;
+
+    if (currentIndex >= questions.length) {
+        finishTest();
+    } else {
+        showQuestion();
+    }
+}
+
+function goBack() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        answers.pop();
+        showQuestion();
+    } else {
+        if (confirm("入力画面に戻りますか？回答はリセットされます。")) {
+            document.getElementById("questionBox").classList.add("hidden");
+            document.getElementById("startBox").classList.remove("hidden");
+        }
+    }
+}
+
+function finishTest() {
+    document.getElementById("questionBox").classList.add("hidden");
+    document.getElementById("resultBox").classList.remove("hidden");
+    document.getElementById("loadingArea").classList.remove("hidden");
+    document.getElementById("resultContent").classList.add("hidden");
+
+    sendResultsToServer();
+}
+
+async function sendResultsToServer() {
+    try {
+        const response = await fetch(API_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                answers: answers,
+                meta: userData
+            }),
+        });
+
+        const data = await response.json();
+        console.log("API response:", data);
+
+        if (!data.ok) {
+            showError("診断処理でエラーが発生しました：" + (data.error || "不明なエラー"));
+            return;
+        }
+
+        currentResultId = data.result_id;
+        displayResult(data);
+
+    } catch (err) {
+        console.error(err);
+        showError("ネットワークエラーが発生しました。時間をおいて再度お試しください。");
+    }
+}
+
+function showError(message) {
+    document.getElementById("loadingArea").classList.add("hidden");
+    document.getElementById("resultContent").classList.remove("hidden");
+    document.getElementById("resultContent").innerHTML = `
+        <div style="text-align: center; color: #cc0000; padding: 40px;">
+            <p>⚠️ ${message}</p>
+            <button class="btn btn-secondary" onclick="resetTest()">🔄 もう一度試す</button>
+        </div>
+    `;
+}
+
+function displayResult(data) {
+    const report = data.report;
+    const result = data.result;
+
+    document.getElementById("loadingArea").classList.add("hidden");
+    document.getElementById("resultContent").classList.remove("hidden");
+
+    // 基本情報
+    document.getElementById("resultName").textContent = userData.name;
+    document.getElementById("resultType").textContent = 
+        `${getTypeNameJP(result.type)}（TYPE ${result.type}）`;
+    document.getElementById("resultOneLiner").textContent = report.one_liner;
+
+    // 4軸
+    const axisGrid = document.getElementById("axisGrid");
+    axisGrid.innerHTML = "";
+    report.axis_info.forEach(axis => {
+        axisGrid.innerHTML += `
+            <div class="axis-item">
+                <span class="axis-name">${axis.name}</span>
+                <span class="axis-level">${axis.level}</span>
+                <p class="axis-desc">${axis.description}</p>
+            </div>
+        `;
+    });
+
+    // 強み
+    const strengthsList = document.getElementById("strengthsList");
+    strengthsList.innerHTML = "";
+    report.strengths.forEach(s => {
+        strengthsList.innerHTML += `<li>${s}</li>`;
+    });
+
+    // 弱み
+    const weaknessesList = document.getElementById("weaknessesList");
+    weaknessesList.innerHTML = "";
+    report.weaknesses.forEach(w => {
+        weaknessesList.innerHTML += `<li>${w}</li>`;
+    });
+
+    // ストレス場面
+    const stressSituationsList = document.getElementById("stressSituationsList");
+    stressSituationsList.innerHTML = "";
+    report.stress_situations.forEach(s => {
+        stressSituationsList.innerHTML += `<li>${s}</li>`;
+    });
+
+    // ストレス対処法
+    const stressCopingList = document.getElementById("stressCopingList");
+    stressCopingList.innerHTML = "";
+    report.stress_coping.forEach(c => {
+        stressCopingList.innerHTML += `<li>${c}</li>`;
+    });
+
+    // 仕事スタイル
+    const workStyleGrid = document.getElementById("workStyleGrid");
+    const ws = report.work_style;
+    workStyleGrid.innerHTML = `
+        <div class="work-style-item">
+            <div class="work-style-label">協働スタイル</div>
+            <div class="work-style-value">${ws.collaboration}</div>
+        </div>
+        <div class="work-style-item">
+            <div class="work-style-label">ペース</div>
+            <div class="work-style-value">${ws.pace}</div>
+        </div>
+        <div class="work-style-item">
+            <div class="work-style-label">アプローチ</div>
+            <div class="work-style-value">${ws.approach}</div>
+        </div>
+        <div class="work-style-item">
+            <div class="work-style-label">思考スタイル</div>
+            <div class="work-style-value">${ws.thinking}</div>
+        </div>
+    `;
+
+    // ストレス耐性
+    const stressTolerance = report.stress_tolerance;
+    document.getElementById("stressLabel").textContent = `${stressTolerance} / 10`;
+    document.getElementById("stressFill").style.width = (stressTolerance * 10) + "%";
+}
+
+function getTypeNameJP(type) {
+    const map = {
+        "S": "和型",
+        "P": "陽型",
+        "C": "理型",
+        "D": "導型"
+    };
+    return map[type] || type;
+}
+
+async function sendEmail() {
+    if (!currentResultId) {
+        alert("結果IDが見つかりません。");
+        return;
+    }
+
+    const statusEl = document.getElementById("emailStatus");
+    statusEl.classList.remove("hidden", "email-success", "email-error");
+    statusEl.textContent = "📩 メールを送信中...";
+
+    try {
+        const response = await fetch("/api/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                result_id: currentResultId,
+                email: userData.email
+            }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            statusEl.classList.add("email-success");
+            statusEl.textContent = "✅ メールを送信しました！";
+        } else {
+            statusEl.classList.add("email-error");
+            statusEl.textContent = "❌ メール送信に失敗しました: " + (data.error || "");
+        }
+    } catch (err) {
+        statusEl.classList.add("email-error");
+        statusEl.textContent = "❌ ネットワークエラーが発生しました";
+    }
+}
+
+function resetTest() {
+    currentIndex = 0;
+    answers = [];
+    userData = {};
+    currentResultId = null;
+
+    document.getElementById("resultBox").classList.add("hidden");
+    document.getElementById("startBox").classList.remove("hidden");
+    
+    // フォームをクリア
+    document.getElementById("userName").value = "";
+    document.getElementById("userEmail").value = "";
+    document.getElementById("userCompany").value = "";
+    document.getElementById("userDept").value = "";
+}
+</script>
+
+</body>
+</html>
