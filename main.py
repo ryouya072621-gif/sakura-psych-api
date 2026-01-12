@@ -479,6 +479,415 @@ def calculate_stress_tolerance(features_55: dict, pc: dict) -> int:
 
 
 # =========================
+# 隠れ属性バッジ生成
+# =========================
+def generate_badges(features_55: dict, pc: dict) -> list:
+    """
+    55因子とPC値から隠れ属性バッジを判定して返す
+    最大5個まで、レア度順に選出
+    """
+    all_badges = []
+
+    # ヘルパー関数
+    def get(key, default=0):
+        return features_55.get(key, default)
+
+    # ========== カテゴリ1: 行動スタイル系 ==========
+
+    # 🚀 スタートダッシャー（★★☆）
+    if get("action_speed") >= 4.0 and get("decision_speed") >= 4.0:
+        all_badges.append({
+            "id": "start_dasher",
+            "name": "スタートダッシャー",
+            "emoji": "🚀",
+            "category": "行動スタイル",
+            "rarity": 2,
+            "description": "即断即決で動き出すタイプ"
+        })
+
+    # 🐢 じっくり派（★★☆）
+    if get("action_cautiousness") >= 4.0 and get("cautiousness") >= 4.0:
+        all_badges.append({
+            "id": "careful_type",
+            "name": "じっくり派",
+            "emoji": "🐢",
+            "category": "行動スタイル",
+            "rarity": 2,
+            "description": "慎重に準備してから動くタイプ"
+        })
+
+    # 🎯 完遂の鬼（★★☆）
+    if get("persistence") >= 4.0 and get("consistency") >= 4.0:
+        all_badges.append({
+            "id": "finisher",
+            "name": "完遂の鬼",
+            "emoji": "🎯",
+            "category": "行動スタイル",
+            "rarity": 2,
+            "description": "一度始めたらやり抜くタイプ"
+        })
+
+    # 🦋 マルチタスカー（★★☆）
+    if get("flexibility") >= 4.0 and get("activity_level") >= 4.0:
+        all_badges.append({
+            "id": "multitasker",
+            "name": "マルチタスカー",
+            "emoji": "🦋",
+            "category": "行動スタイル",
+            "rarity": 2,
+            "description": "複数のことを同時にこなせるタイプ"
+        })
+
+    # 📐 段取りマスター（★★☆）
+    if get("planning") >= 4.0 and get("conscientiousness") >= 4.0:
+        all_badges.append({
+            "id": "planner",
+            "name": "段取りマスター",
+            "emoji": "📐",
+            "category": "行動スタイル",
+            "rarity": 2,
+            "description": "計画を立てて着実に進めるタイプ"
+        })
+
+    # ⚡ 直感アクター（★☆☆）
+    if get("action_orientation") >= 4.0 and get("decision_speed") >= 4.0 and get("planning") < 3.0:
+        all_badges.append({
+            "id": "intuitive_actor",
+            "name": "直感アクター",
+            "emoji": "⚡",
+            "category": "行動スタイル",
+            "rarity": 1,
+            "description": "考えるより先に動くタイプ"
+        })
+
+    # ========== カテゴリ2: 対人スタイル系 ==========
+
+    # 🤝 共感マイスター（★★☆）
+    if get("empathy") >= 4.0 and get("emotional_sensitivity") >= 4.0:
+        all_badges.append({
+            "id": "empathy_master",
+            "name": "共感マイスター",
+            "emoji": "🤝",
+            "category": "対人スタイル",
+            "rarity": 2,
+            "description": "人の気持ちに寄り添えるタイプ"
+        })
+
+    # 🎤 場の盛り上げ役（★★★）
+    if get("sociability") >= 4.0 and get("extroversion") >= 4.0 and get("social_ease") >= 4.0:
+        all_badges.append({
+            "id": "mood_maker",
+            "name": "場の盛り上げ役",
+            "emoji": "🎤",
+            "category": "対人スタイル",
+            "rarity": 3,
+            "description": "ムードメーカータイプ"
+        })
+
+    # 🧘 一人時間の達人（★☆☆）
+    if get("inner_world") >= 4.0 and get("extroversion") < 3.0:
+        all_badges.append({
+            "id": "solo_master",
+            "name": "一人時間の達人",
+            "emoji": "🧘",
+            "category": "対人スタイル",
+            "rarity": 1,
+            "description": "内省・自分時間を大切にするタイプ"
+        })
+
+    # 👑 リーダー気質（★★☆）
+    if get("leadership") >= 4.0 and get("self_efficacy") >= 4.0:
+        all_badges.append({
+            "id": "leader_type",
+            "name": "リーダー気質",
+            "emoji": "👑",
+            "category": "対人スタイル",
+            "rarity": 2,
+            "description": "自然と人を引っ張るタイプ"
+        })
+
+    # 🤲 サポーター魂（★★☆）
+    if get("cooperativeness") >= 4.0 and get("obedience") >= 3.5 and get("leadership") < 3.5:
+        all_badges.append({
+            "id": "supporter",
+            "name": "サポーター魂",
+            "emoji": "🤲",
+            "category": "対人スタイル",
+            "rarity": 2,
+            "description": "縁の下の力持ちタイプ"
+        })
+
+    # 🗣️ ストレートトーカー（★☆☆）
+    if get("straightforwardness") >= 4.0:
+        all_badges.append({
+            "id": "straight_talker",
+            "name": "ストレートトーカー",
+            "emoji": "🗣️",
+            "category": "対人スタイル",
+            "rarity": 1,
+            "description": "思ったことを素直に言えるタイプ"
+        })
+
+    # ========== カテゴリ3: 思考スタイル系 ==========
+
+    # 🔬 ロジカルシンカー（★★☆）
+    if get("logical_thinking") >= 4.0 and get("cognitive_style") >= 4.0:
+        all_badges.append({
+            "id": "logical_thinker",
+            "name": "ロジカルシンカー",
+            "emoji": "🔬",
+            "category": "思考スタイル",
+            "rarity": 2,
+            "description": "論理的に分析できるタイプ"
+        })
+
+    # 💡 アイデアマン（★★☆）
+    if get("innovation_orientation") >= 4.0 and get("uniqueness") >= 4.0:
+        all_badges.append({
+            "id": "idea_person",
+            "name": "アイデアマン",
+            "emoji": "💡",
+            "category": "思考スタイル",
+            "rarity": 2,
+            "description": "新しい発想が得意なタイプ"
+        })
+
+    # ⚖️ 正義の味方（★☆☆）
+    if get("justice_sense") >= 4.5:
+        all_badges.append({
+            "id": "justice_seeker",
+            "name": "正義の味方",
+            "emoji": "⚖️",
+            "category": "思考スタイル",
+            "rarity": 1,
+            "description": "公平さを重視するタイプ"
+        })
+
+    # 🎨 感性派（★☆☆）
+    if get("emotional_sensitivity") >= 4.0 and get("sensitivity") >= 4.0 and get("logical_thinking") < 3.0:
+        all_badges.append({
+            "id": "sensory_type",
+            "name": "感性派",
+            "emoji": "🎨",
+            "category": "思考スタイル",
+            "rarity": 1,
+            "description": "感覚や直感を大切にするタイプ"
+        })
+
+    # 🔄 柔軟シフター（★☆☆）
+    if get("flexibility") >= 4.0 and get("cognitive_style") < 3.0:
+        all_badges.append({
+            "id": "flexible_shifter",
+            "name": "柔軟シフター",
+            "emoji": "🔄",
+            "category": "思考スタイル",
+            "rarity": 1,
+            "description": "状況に応じて考えを変えられるタイプ"
+        })
+
+    # ========== カテゴリ4: メンタル特性系 ==========
+
+    # 🛡️ 鋼のメンタル（★★★）
+    if get("stress_tolerance") >= 4.0 and get("emotional_stability") >= 4.0 and get("stress_recovery") >= 4.0:
+        all_badges.append({
+            "id": "steel_mental",
+            "name": "鋼のメンタル",
+            "emoji": "🛡️",
+            "category": "メンタル特性",
+            "rarity": 3,
+            "description": "ストレスに強いタイプ"
+        })
+
+    # 🌸 繊細さん（★★☆）
+    if get("sensitivity") >= 4.0 and get("anxiety_tendency") >= 4.0:
+        all_badges.append({
+            "id": "sensitive_type",
+            "name": "繊細さん",
+            "emoji": "🌸",
+            "category": "メンタル特性",
+            "rarity": 2,
+            "description": "感受性が豊かなタイプ"
+        })
+
+    # 🌞 ポジティブモンスター（★★★）
+    if get("self_evaluation") >= 4.0 and get("self_efficacy") >= 4.0 and get("anxiety_tendency") < 2.5:
+        all_badges.append({
+            "id": "positive_monster",
+            "name": "ポジティブモンスター",
+            "emoji": "🌞",
+            "category": "メンタル特性",
+            "rarity": 3,
+            "description": "前向きで自己肯定感が高いタイプ"
+        })
+
+    # 🔥 成長ハングリー（★★☆）
+    if get("growth_motivation") >= 4.0 and get("intrinsic_motivation") >= 4.0:
+        all_badges.append({
+            "id": "growth_hungry",
+            "name": "成長ハングリー",
+            "emoji": "🔥",
+            "category": "メンタル特性",
+            "rarity": 2,
+            "description": "自己成長への意欲が強いタイプ"
+        })
+
+    # 😌 安定志向（★★☆）
+    if get("emotional_stability") >= 4.0 and get("risk_aversion") >= 4.0 and get("calmness") >= 4.0:
+        all_badges.append({
+            "id": "stability_seeker",
+            "name": "安定志向",
+            "emoji": "😌",
+            "category": "メンタル特性",
+            "rarity": 2,
+            "description": "穏やかで安定を好むタイプ"
+        })
+
+    # 🎢 刺激シーカー（★★☆）
+    if get("risk_tolerance") >= 4.0 and get("activity_level") >= 4.0 and get("risk_aversion") < 2.5:
+        all_badges.append({
+            "id": "thrill_seeker",
+            "name": "刺激シーカー",
+            "emoji": "🎢",
+            "category": "メンタル特性",
+            "rarity": 2,
+            "description": "新しい挑戦が好きなタイプ"
+        })
+
+    # ========== カテゴリ5: 仕事観系 ==========
+
+    # 🏆 結果にコミット（★☆☆）
+    if get("value_process_vs_result") < 2.5 and get("competitiveness") >= 4.0:
+        all_badges.append({
+            "id": "result_oriented",
+            "name": "結果にコミット",
+            "emoji": "🏆",
+            "category": "仕事観",
+            "rarity": 1,
+            "description": "結果を重視するタイプ"
+        })
+
+    # 🌱 プロセス重視（★☆☆）
+    if get("value_process_vs_result") >= 4.0:
+        all_badges.append({
+            "id": "process_oriented",
+            "name": "プロセス重視",
+            "emoji": "🌱",
+            "category": "仕事観",
+            "rarity": 1,
+            "description": "過程を大切にするタイプ"
+        })
+
+    # ⚖️ ワークライフバランサー（★☆☆）
+    if get("work_life_value") >= 4.0 and get("work_life_boundary") >= 4.0:
+        all_badges.append({
+            "id": "work_life_balancer",
+            "name": "ワークライフバランサー",
+            "emoji": "⚖️",
+            "category": "仕事観",
+            "rarity": 1,
+            "description": "仕事とプライベートを両立するタイプ"
+        })
+
+    # 💼 仕事人間（★☆☆）
+    if get("work_life_value") < 2.5 and get("external_motivation") >= 4.0:
+        all_badges.append({
+            "id": "workaholic",
+            "name": "仕事人間",
+            "emoji": "💼",
+            "category": "仕事観",
+            "rarity": 1,
+            "description": "仕事に全力投球タイプ"
+        })
+
+    # 🌟 自己実現タイプ（★☆☆）
+    if get("intrinsic_motivation") >= 4.0 and get("value_self_vs_world") >= 4.0:
+        all_badges.append({
+            "id": "self_actualization",
+            "name": "自己実現タイプ",
+            "emoji": "🌟",
+            "category": "仕事観",
+            "rarity": 1,
+            "description": "自分らしさを追求するタイプ"
+        })
+
+    # ========== カテゴリ6: 特殊バッジ（PC値ベース）==========
+
+    pc1 = pc.get("PC1", 0)
+    pc2 = pc.get("PC2", 0)
+    pc3 = pc.get("PC3", 0)
+    pc4 = pc.get("PC4", 0)
+
+    # 🌈 オールラウンダー（★★★）- 全PC値がバランス
+    if all(-0.5 <= v <= 0.5 for v in [pc1, pc2, pc3, pc4]):
+        all_badges.append({
+            "id": "all_rounder",
+            "name": "オールラウンダー",
+            "emoji": "🌈",
+            "category": "特殊",
+            "rarity": 3,
+            "description": "バランス型の稀有な存在"
+        })
+
+    # ⭐ 極み人（★★★）- いずれかのPC値が突出
+    if any(abs(v) > 2.0 for v in [pc1, pc2, pc3, pc4]):
+        all_badges.append({
+            "id": "extremist",
+            "name": "極み人",
+            "emoji": "⭐",
+            "category": "特殊",
+            "rarity": 3,
+            "description": "突出した特性を持つ存在"
+        })
+
+    # 🎭 二面性の持ち主（★★★）- 対照的な特性
+    if abs(pc1 - pc2) > 3.0 or abs(pc3 - pc4) > 3.0:
+        all_badges.append({
+            "id": "dual_nature",
+            "name": "二面性の持ち主",
+            "emoji": "🎭",
+            "category": "特殊",
+            "rarity": 3,
+            "description": "対照的な特性を併せ持つ存在"
+        })
+
+    # 💎 ダイヤの原石（★★★）- リーダー素質あるが自覚なし
+    if pc4 >= 1.5 and get("self_efficacy") < 3.0:
+        all_badges.append({
+            "id": "hidden_gem",
+            "name": "ダイヤの原石",
+            "emoji": "💎",
+            "category": "特殊",
+            "rarity": 3,
+            "description": "リーダー素質があるが自覚なしタイプ"
+        })
+
+    # ========== バッジ選出 ==========
+
+    # レア度でソート（降順）
+    all_badges.sort(key=lambda x: x["rarity"], reverse=True)
+
+    # 同カテゴリから2個以上は出さない
+    selected_badges = []
+    category_count = {}
+
+    for badge in all_badges:
+        cat = badge["category"]
+        if category_count.get(cat, 0) < 2:
+            selected_badges.append(badge)
+            category_count[cat] = category_count.get(cat, 0) + 1
+
+        if len(selected_badges) >= 5:
+            break
+
+    # レア度を星表示に変換
+    rarity_display = {1: "★☆☆", 2: "★★☆", 3: "★★★"}
+    for badge in selected_badges:
+        badge["rarity_display"] = rarity_display.get(badge["rarity"], "★☆☆")
+
+    return selected_badges
+
+
+# =========================
 # 詳細解説文生成（200文字程度、バーナム効果）
 # =========================
 def generate_detailed_description(pc: dict, type_label: str, features_55: dict = None) -> str:
@@ -1059,6 +1468,7 @@ def save_result(result_data: dict) -> str:
         "report": result_data.get("report", {}),
         "result": result_data.get("result", {}),
         "consistency": result_data.get("consistency", {}),
+        "badges": result_data.get("badges", []),
         "created_at": firestore.SERVER_TIMESTAMP,
         "updated_at": firestore.SERVER_TIMESTAMP,
     }
@@ -1278,6 +1688,14 @@ def api_sakura_psych():
         "PC4": result["PC4"],
     }, top_n=3)
 
+    # 隠れ属性バッジを生成
+    badges = generate_badges(features_55, {
+        "PC1": result["PC1"],
+        "PC2": result["PC2"],
+        "PC3": result["PC3"],
+        "PC4": result["PC4"],
+    })
+
     # 結果を保存
     save_data = {
         "meta": meta,
@@ -1288,6 +1706,7 @@ def api_sakura_psych():
         "answers": answers,
         "consistency": consistency,
         "job_fit": job_fit,
+        "badges": badges,
     }
     result_id = save_result(save_data)
 
@@ -1301,6 +1720,7 @@ def api_sakura_psych():
         "meta": meta,
         "consistency": consistency,
         "job_fit": job_fit,
+        "badges": badges,
     })
 
 
