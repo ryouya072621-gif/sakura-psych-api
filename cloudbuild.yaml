@@ -24,3 +24,6 @@ steps:
 
 images:
   - 'gcr.io/$PROJECT_ID/sakura-psych-api:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
