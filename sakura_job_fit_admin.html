@@ -294,6 +294,115 @@
                 width: 60px;
             }
         }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--sakura-pink);
+            border-top-color: var(--sakura-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats-category {
+            margin-bottom: 25px;
+        }
+
+        .stats-category-title {
+            font-weight: bold;
+            color: var(--sakura-accent);
+            font-size: 1rem;
+            margin-bottom: 10px;
+            padding-left: 10px;
+            border-left: 4px solid var(--sakura-accent);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .stats-item {
+            background: var(--sakura-pink-light);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stats-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-item-name {
+            font-weight: bold;
+            color: var(--text-dark);
+        }
+
+        .stats-item-count {
+            font-size: 12px;
+            color: var(--text-light);
+            background: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .stats-item-values {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .stats-value {
+            text-align: center;
+            background: white;
+            padding: 5px;
+            border-radius: 6px;
+        }
+
+        .stats-value-label {
+            color: var(--text-light);
+            font-size: 10px;
+        }
+
+        .stats-value-num {
+            font-weight: bold;
+            color: var(--sakura-accent);
+        }
+
+        .stats-item-actions {
+            text-align: right;
+        }
+
+        .btn-import {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            padding: 5px 12px;
+            font-size: 11px;
+        }
+
+        .no-data {
+            color: var(--text-light);
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .category-labels {
+            clinics: "クリニック";
+            positions: "職種";
+            areas: "エリア";
+            company: "所属カテゴリ";
+        }
     </style>
 </head>
 <body>
@@ -303,6 +412,24 @@
     <div class="header-actions">
         <a href="/admin" class="btn btn-secondary">管理画面に戻る</a>
         <a href="/reference-admin" class="btn btn-secondary">参照データ管理</a>
+    </div>
+</div>
+
+<!-- タグ別統計セクション -->
+<div class="card">
+    <h2>タグ別統計（自動集計）</h2>
+
+    <div class="description">
+        <strong>既存データからの自動集計</strong><br>
+        診断済みのデータから、各タグ（職種・分院・エリア等）ごとの平均PCスコアを自動計算します。<br>
+        「プロファイルに追加」ボタンで、この統計値を適職プロファイルとして登録できます。
+    </div>
+
+    <div id="statisticsContainer">
+        <div class="empty-state">
+            <div class="spinner"></div>
+            <p>統計を読み込み中...</p>
+        </div>
     </div>
 </div>
 
@@ -394,8 +521,16 @@
 const API_BASE = "";
 let profiles = [];
 
+const CATEGORY_LABELS = {
+    "clinics": "クリニック",
+    "positions": "職種",
+    "areas": "エリア",
+    "company": "所属カテゴリ"
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     loadProfiles();
+    loadStatistics();
 });
 
 async function loadProfiles() {
@@ -568,6 +703,112 @@ function escapeHtml(str) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+// タグ別統計の読み込みと表示
+async function loadStatistics() {
+    const container = document.getElementById("statisticsContainer");
+
+    try {
+        const response = await fetch(`${API_BASE}/api/tag-statistics`);
+        const data = await response.json();
+
+        if (!data.ok) {
+            container.innerHTML = '<div class="no-data">統計の読み込みに失敗しました</div>';
+            return;
+        }
+
+        if (data.total_count === 0) {
+            container.innerHTML = '<div class="no-data">診断データがありません。診断が行われるとここに統計が表示されます。</div>';
+            return;
+        }
+
+        let html = `<p style="margin-bottom: 15px; color: var(--text-light);">総診断数: <strong>${data.total_count}名</strong></p>`;
+
+        const statistics = data.statistics;
+
+        for (const [category, tags] of Object.entries(statistics)) {
+            const categoryLabel = CATEGORY_LABELS[category] || category;
+            const tagEntries = Object.entries(tags);
+
+            if (tagEntries.length === 0) continue;
+
+            html += `<div class="stats-category">`;
+            html += `<div class="stats-category-title">${escapeHtml(categoryLabel)}</div>`;
+            html += `<div class="stats-grid">`;
+
+            for (const [tagName, stats] of tagEntries) {
+                html += `
+                    <div class="stats-item">
+                        <div class="stats-item-header">
+                            <span class="stats-item-name">${escapeHtml(tagName)}</span>
+                            <span class="stats-item-count">${stats.count}名</span>
+                        </div>
+                        <div class="stats-item-values">
+                            <div class="stats-value">
+                                <div class="stats-value-label">PC1</div>
+                                <div class="stats-value-num">${stats.PC1}</div>
+                            </div>
+                            <div class="stats-value">
+                                <div class="stats-value-label">PC2</div>
+                                <div class="stats-value-num">${stats.PC2}</div>
+                            </div>
+                            <div class="stats-value">
+                                <div class="stats-value-label">PC3</div>
+                                <div class="stats-value-num">${stats.PC3}</div>
+                            </div>
+                            <div class="stats-value">
+                                <div class="stats-value-label">PC4</div>
+                                <div class="stats-value-num">${stats.PC4}</div>
+                            </div>
+                        </div>
+                        <div class="stats-item-actions">
+                            <button class="btn btn-import btn-sm" onclick="importToProfile('${escapeHtml(tagName)}', ${stats.PC1}, ${stats.PC2}, ${stats.PC3}, ${stats.PC4}, ${stats.count})">
+                                プロファイルに追加
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `</div></div>`;
+        }
+
+        container.innerHTML = html;
+
+    } catch (e) {
+        console.error("Failed to load statistics:", e);
+        container.innerHTML = '<div class="no-data">統計の読み込みに失敗しました</div>';
+    }
+}
+
+async function importToProfile(tagName, pc1, pc2, pc3, pc4, count) {
+    try {
+        const response = await fetch(`${API_BASE}/api/tag-statistics/import-to-profiles`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tag_name: tagName,
+                PC1: pc1,
+                PC2: pc2,
+                PC3: pc3,
+                PC4: pc4,
+                count: count
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            showStatus(data.message, "success");
+            loadProfiles(); // プロファイル一覧を更新
+        } else {
+            showStatus(data.error || "インポートに失敗しました", "error");
+        }
+    } catch (e) {
+        console.error("Failed to import:", e);
+        showStatus("インポートに失敗しました", "error");
+    }
 }
 </script>
 

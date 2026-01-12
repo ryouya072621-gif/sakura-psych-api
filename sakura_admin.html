@@ -1248,11 +1248,10 @@ function renderEditTagOptions(category, containerId) {
     container.innerHTML = allTags.map(tag => {
         const isSelected = selectedTags.includes(tag);
         return `
-            <label class="tag-select-option ${isSelected ? 'selected' : ''}"
-                   onclick="toggleEditTag('${category}', '${escapeHtml(tag)}', this)">
-                <input type="checkbox" ${isSelected ? 'checked' : ''}>
+            <div class="tag-select-option ${isSelected ? 'selected' : ''}"
+                 onclick="toggleEditTag('${category}', '${escapeHtml(tag)}', this)">
                 ${escapeHtml(tag)}
-            </label>
+            </div>
         `;
     }).join('');
 }

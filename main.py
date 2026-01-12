@@ -1578,6 +1578,144 @@ def api_delete_job_fit_profile(job_name):
 
 
 # =========================
+# タグ別統計API
+# =========================
+@app.route("/api/tag-statistics", methods=["GET"])
+def api_tag_statistics():
+    """タグ別の平均PCスコアを計算して返す"""
+    # 全結果を読み込み
+    all_results = []
+    for filepath in RESULTS_DIR.glob("*.json"):
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            result = data.get("result", {})
+            meta = data.get("meta", {})
+            tags = meta.get("tags", {})
+
+            # PCスコアがある結果のみ
+            if result.get("PC1") is not None:
+                all_results.append({
+                    "PC1": result.get("PC1", 0),
+                    "PC2": result.get("PC2", 0),
+                    "PC3": result.get("PC3", 0),
+                    "PC4": result.get("PC4", 0),
+                    "company": meta.get("company", ""),
+                    "tags": tags,
+                })
+
+    if not all_results:
+        return jsonify({"ok": True, "statistics": {}, "total_count": 0})
+
+    # タグマスターを取得
+    tag_master = load_tag_master()
+
+    statistics = {}
+
+    # カテゴリ別に集計
+    for category, values in tag_master.items():
+        if category == "status":
+            continue  # ステータスは除外
+
+        statistics[category] = {}
+
+        for tag_value in values:
+            # このタグを持つ結果をフィルタ
+            matching = []
+            for r in all_results:
+                tag_list = r["tags"].get(category, [])
+                if tag_value in tag_list:
+                    matching.append(r)
+
+            if matching:
+                avg_pc1 = sum(r["PC1"] for r in matching) / len(matching)
+                avg_pc2 = sum(r["PC2"] for r in matching) / len(matching)
+                avg_pc3 = sum(r["PC3"] for r in matching) / len(matching)
+                avg_pc4 = sum(r["PC4"] for r in matching) / len(matching)
+
+                statistics[category][tag_value] = {
+                    "count": len(matching),
+                    "PC1": round(avg_pc1, 2),
+                    "PC2": round(avg_pc2, 2),
+                    "PC3": round(avg_pc3, 2),
+                    "PC4": round(avg_pc4, 2),
+                }
+
+    # 所属カテゴリ別も集計
+    statistics["company"] = {}
+    for category in COMPANY_CATEGORIES:
+        matching = [r for r in all_results if r["company"] == category]
+        if matching:
+            avg_pc1 = sum(r["PC1"] for r in matching) / len(matching)
+            avg_pc2 = sum(r["PC2"] for r in matching) / len(matching)
+            avg_pc3 = sum(r["PC3"] for r in matching) / len(matching)
+            avg_pc4 = sum(r["PC4"] for r in matching) / len(matching)
+
+            statistics["company"][category] = {
+                "count": len(matching),
+                "PC1": round(avg_pc1, 2),
+                "PC2": round(avg_pc2, 2),
+                "PC3": round(avg_pc3, 2),
+                "PC4": round(avg_pc4, 2),
+            }
+
+    return jsonify({
+        "ok": True,
+        "statistics": statistics,
+        "total_count": len(all_results)
+    })
+
+
+@app.route("/api/tag-statistics/import-to-profiles", methods=["POST", "OPTIONS"])
+def api_import_tag_to_profiles():
+    """タグの統計値を適職プロファイルにインポート"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    global job_fit_df
+
+    data = request.get_json(silent=True) or {}
+    tag_name = data.get("tag_name")
+    pc1 = data.get("PC1", 0)
+    pc2 = data.get("PC2", 0)
+    pc3 = data.get("PC3", 0)
+    pc4 = data.get("PC4", 0)
+    count = data.get("count", 0)
+
+    if not tag_name:
+        return jsonify({"ok": False, "error": "tag_name が必要です"}), 400
+
+    description = f"タグ「{tag_name}」の平均値（{count}名）"
+
+    # 既存チェック
+    if tag_name in job_fit_df["job_name"].values:
+        # 更新
+        mask = job_fit_df["job_name"] == tag_name
+        job_fit_df.loc[mask, "PC1"] = pc1
+        job_fit_df.loc[mask, "PC2"] = pc2
+        job_fit_df.loc[mask, "PC3"] = pc3
+        job_fit_df.loc[mask, "PC4"] = pc4
+        job_fit_df.loc[mask, "description"] = description
+        message = f"'{tag_name}' を更新しました"
+    else:
+        # 追加
+        new_row = pd.DataFrame([{
+            "job_name": tag_name,
+            "PC1": pc1,
+            "PC2": pc2,
+            "PC3": pc3,
+            "PC4": pc4,
+            "description": description,
+        }])
+        job_fit_df = pd.concat([job_fit_df, new_row], ignore_index=True)
+        message = f"'{tag_name}' を追加しました"
+
+    # Excelに保存
+    job_fit_df.to_excel(JOB_FIT_FILE, index=False)
+
+    return jsonify({"ok": True, "message": message})
+
+
+# =========================
 # メール送信
 # =========================
 def send_mail(to_addrs, subject, body):
