@@ -495,7 +495,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
     # ========== カテゴリ1: 行動スタイル系 ==========
 
     # 🚀 スタートダッシャー（★★☆）
-    if get("action_speed") >= 4.0 and get("decision_speed") >= 4.0:
+    if get("action_speed") >= 3.5 and get("decision_speed") >= 3.5:
         all_badges.append({
             "id": "start_dasher",
             "name": "スタートダッシャー",
@@ -506,7 +506,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🐢 じっくり派（★★☆）
-    if get("action_cautiousness") >= 4.0 and get("cautiousness") >= 4.0:
+    if get("action_cautiousness") >= 3.5 and get("cautiousness") >= 3.5:
         all_badges.append({
             "id": "careful_type",
             "name": "じっくり派",
@@ -517,7 +517,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🎯 完遂の鬼（★★☆）
-    if get("persistence") >= 4.0 and get("consistency") >= 4.0:
+    if get("persistence") >= 3.5 and get("consistency") >= 3.5:
         all_badges.append({
             "id": "finisher",
             "name": "完遂の鬼",
@@ -528,7 +528,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🦋 マルチタスカー（★★☆）
-    if get("flexibility") >= 4.0 and get("activity_level") >= 4.0:
+    if get("flexibility") >= 3.5 and get("activity_level") >= 3.5:
         all_badges.append({
             "id": "multitasker",
             "name": "マルチタスカー",
@@ -539,7 +539,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 📐 段取りマスター（★★☆）
-    if get("planning") >= 4.0 and get("conscientiousness") >= 4.0:
+    if get("planning") >= 3.5 and get("conscientiousness") >= 3.5:
         all_badges.append({
             "id": "planner",
             "name": "段取りマスター",
@@ -550,7 +550,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # ⚡ 直感アクター（★☆☆）
-    if get("action_orientation") >= 4.0 and get("decision_speed") >= 4.0 and get("planning") < 3.0:
+    if get("action_orientation") >= 3.5 and get("decision_speed") >= 3.5 and get("planning") < 3.5:
         all_badges.append({
             "id": "intuitive_actor",
             "name": "直感アクター",
@@ -563,7 +563,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
     # ========== カテゴリ2: 対人スタイル系 ==========
 
     # 🤝 共感マイスター（★★☆）
-    if get("empathy") >= 4.0 and get("emotional_sensitivity") >= 4.0:
+    if get("empathy") >= 3.5 and get("emotional_sensitivity") >= 3.5:
         all_badges.append({
             "id": "empathy_master",
             "name": "共感マイスター",
@@ -574,7 +574,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🎤 場の盛り上げ役（★★★）
-    if get("sociability") >= 4.0 and get("extroversion") >= 4.0 and get("social_ease") >= 4.0:
+    if get("sociability") >= 3.5 and get("extroversion") >= 3.5 and get("social_ease") >= 3.5:
         all_badges.append({
             "id": "mood_maker",
             "name": "場の盛り上げ役",
@@ -585,7 +585,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🧘 一人時間の達人（★☆☆）
-    if get("inner_world") >= 4.0 and get("extroversion") < 3.0:
+    if get("inner_world") >= 3.5 and get("extroversion") < 3.5:
         all_badges.append({
             "id": "solo_master",
             "name": "一人時間の達人",
@@ -596,7 +596,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 👑 リーダー気質（★★☆）
-    if get("leadership") >= 4.0 and get("self_efficacy") >= 4.0:
+    if get("leadership") >= 3.5 and get("self_efficacy") >= 3.5:
         all_badges.append({
             "id": "leader_type",
             "name": "リーダー気質",
@@ -607,7 +607,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🤲 サポーター魂（★★☆）
-    if get("cooperativeness") >= 4.0 and get("obedience") >= 3.5 and get("leadership") < 3.5:
+    if get("cooperativeness") >= 3.5 and get("obedience") >= 3.0 and get("leadership") < 3.5:
         all_badges.append({
             "id": "supporter",
             "name": "サポーター魂",
@@ -618,7 +618,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🗣️ ストレートトーカー（★☆☆）
-    if get("straightforwardness") >= 4.0:
+    if get("straightforwardness") >= 3.5:
         all_badges.append({
             "id": "straight_talker",
             "name": "ストレートトーカー",
@@ -631,7 +631,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
     # ========== カテゴリ3: 思考スタイル系 ==========
 
     # 🔬 ロジカルシンカー（★★☆）
-    if get("logical_thinking") >= 4.0 and get("cognitive_style") >= 4.0:
+    if get("logical_thinking") >= 3.5 and get("cognitive_style") >= 3.5:
         all_badges.append({
             "id": "logical_thinker",
             "name": "ロジカルシンカー",
@@ -642,7 +642,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 💡 アイデアマン（★★☆）
-    if get("innovation_orientation") >= 4.0 and get("uniqueness") >= 4.0:
+    if get("innovation_orientation") >= 3.5 and get("uniqueness") >= 3.5:
         all_badges.append({
             "id": "idea_person",
             "name": "アイデアマン",
@@ -653,7 +653,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # ⚖️ 正義の味方（★☆☆）
-    if get("justice_sense") >= 4.5:
+    if get("justice_sense") >= 4.0:
         all_badges.append({
             "id": "justice_seeker",
             "name": "正義の味方",
@@ -664,7 +664,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🎨 感性派（★☆☆）
-    if get("emotional_sensitivity") >= 4.0 and get("sensitivity") >= 4.0 and get("logical_thinking") < 3.0:
+    if get("emotional_sensitivity") >= 3.5 and get("sensitivity") >= 3.5 and get("logical_thinking") < 3.5:
         all_badges.append({
             "id": "sensory_type",
             "name": "感性派",
@@ -675,7 +675,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🔄 柔軟シフター（★☆☆）
-    if get("flexibility") >= 4.0 and get("cognitive_style") < 3.0:
+    if get("flexibility") >= 3.5 and get("cognitive_style") < 3.5:
         all_badges.append({
             "id": "flexible_shifter",
             "name": "柔軟シフター",
@@ -688,7 +688,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
     # ========== カテゴリ4: メンタル特性系 ==========
 
     # 🛡️ 鋼のメンタル（★★★）
-    if get("stress_tolerance") >= 4.0 and get("emotional_stability") >= 4.0 and get("stress_recovery") >= 4.0:
+    if get("stress_tolerance") >= 3.5 and get("emotional_stability") >= 3.5 and get("stress_recovery") >= 3.5:
         all_badges.append({
             "id": "steel_mental",
             "name": "鋼のメンタル",
@@ -699,7 +699,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🌸 繊細さん（★★☆）
-    if get("sensitivity") >= 4.0 and get("anxiety_tendency") >= 4.0:
+    if get("sensitivity") >= 3.5 and get("anxiety_tendency") >= 3.5:
         all_badges.append({
             "id": "sensitive_type",
             "name": "繊細さん",
@@ -710,7 +710,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🌞 ポジティブモンスター（★★★）
-    if get("self_evaluation") >= 4.0 and get("self_efficacy") >= 4.0 and get("anxiety_tendency") < 2.5:
+    if get("self_evaluation") >= 3.5 and get("self_efficacy") >= 3.5 and get("anxiety_tendency") < 3.0:
         all_badges.append({
             "id": "positive_monster",
             "name": "ポジティブモンスター",
@@ -721,7 +721,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🔥 成長ハングリー（★★☆）
-    if get("growth_motivation") >= 4.0 and get("intrinsic_motivation") >= 4.0:
+    if get("growth_motivation") >= 3.5 and get("intrinsic_motivation") >= 3.5:
         all_badges.append({
             "id": "growth_hungry",
             "name": "成長ハングリー",
@@ -732,7 +732,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 😌 安定志向（★★☆）
-    if get("emotional_stability") >= 4.0 and get("risk_aversion") >= 4.0 and get("calmness") >= 4.0:
+    if get("emotional_stability") >= 3.5 and get("risk_aversion") >= 3.5 and get("calmness") >= 3.5:
         all_badges.append({
             "id": "stability_seeker",
             "name": "安定志向",
@@ -743,7 +743,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🎢 刺激シーカー（★★☆）
-    if get("risk_tolerance") >= 4.0 and get("activity_level") >= 4.0 and get("risk_aversion") < 2.5:
+    if get("risk_tolerance") >= 3.5 and get("activity_level") >= 3.5 and get("risk_aversion") < 3.0:
         all_badges.append({
             "id": "thrill_seeker",
             "name": "刺激シーカー",
@@ -756,7 +756,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
     # ========== カテゴリ5: 仕事観系 ==========
 
     # 🏆 結果にコミット（★☆☆）
-    if get("value_process_vs_result") < 2.5 and get("competitiveness") >= 4.0:
+    if get("value_process_vs_result") < 3.0 and get("competitiveness") >= 3.5:
         all_badges.append({
             "id": "result_oriented",
             "name": "結果にコミット",
@@ -767,7 +767,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🌱 プロセス重視（★☆☆）
-    if get("value_process_vs_result") >= 4.0:
+    if get("value_process_vs_result") >= 3.5:
         all_badges.append({
             "id": "process_oriented",
             "name": "プロセス重視",
@@ -778,7 +778,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # ⚖️ ワークライフバランサー（★☆☆）
-    if get("work_life_value") >= 4.0 and get("work_life_boundary") >= 4.0:
+    if get("work_life_value") >= 3.5 and get("work_life_boundary") >= 3.5:
         all_badges.append({
             "id": "work_life_balancer",
             "name": "ワークライフバランサー",
@@ -789,7 +789,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 💼 仕事人間（★☆☆）
-    if get("work_life_value") < 2.5 and get("external_motivation") >= 4.0:
+    if get("work_life_value") < 3.0 and get("external_motivation") >= 3.5:
         all_badges.append({
             "id": "workaholic",
             "name": "仕事人間",
@@ -800,7 +800,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🌟 自己実現タイプ（★☆☆）
-    if get("intrinsic_motivation") >= 4.0 and get("value_self_vs_world") >= 4.0:
+    if get("intrinsic_motivation") >= 3.5 and get("value_self_vs_world") >= 3.5:
         all_badges.append({
             "id": "self_actualization",
             "name": "自己実現タイプ",
@@ -818,7 +818,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
     pc4 = pc.get("PC4", 0)
 
     # 🌈 オールラウンダー（★★★）- 全PC値がバランス
-    if all(-0.5 <= v <= 0.5 for v in [pc1, pc2, pc3, pc4]):
+    if all(-0.8 <= v <= 0.8 for v in [pc1, pc2, pc3, pc4]):
         all_badges.append({
             "id": "all_rounder",
             "name": "オールラウンダー",
@@ -829,7 +829,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # ⭐ 極み人（★★★）- いずれかのPC値が突出
-    if any(abs(v) > 2.0 for v in [pc1, pc2, pc3, pc4]):
+    if any(abs(v) > 1.5 for v in [pc1, pc2, pc3, pc4]):
         all_badges.append({
             "id": "extremist",
             "name": "極み人",
@@ -840,7 +840,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 🎭 二面性の持ち主（★★★）- 対照的な特性
-    if abs(pc1 - pc2) > 3.0 or abs(pc3 - pc4) > 3.0:
+    if abs(pc1 - pc2) > 2.0 or abs(pc3 - pc4) > 2.0:
         all_badges.append({
             "id": "dual_nature",
             "name": "二面性の持ち主",
@@ -851,7 +851,7 @@ def generate_badges(features_55: dict, pc: dict) -> list:
         })
 
     # 💎 ダイヤの原石（★★★）- リーダー素質あるが自覚なし
-    if pc4 >= 1.5 and get("self_efficacy") < 3.0:
+    if pc4 >= 1.0 and get("self_efficacy") < 3.5:
         all_badges.append({
             "id": "hidden_gem",
             "name": "ダイヤの原石",
