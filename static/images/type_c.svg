@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bgC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E6F3FF"/>
+      <stop offset="100%" style="stop-color:#87CEEB"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#bgC)" stroke="#4169E1" stroke-width="3"/>
+  <!-- Grid/chart lines -->
+  <g stroke="#4169E1" stroke-width="1.5" opacity="0.4">
+    <line x1="50" y1="60" x2="150" y2="60"/>
+    <line x1="50" y1="80" x2="150" y2="80"/>
+    <line x1="50" y1="100" x2="150" y2="100"/>
+    <line x1="50" y1="120" x2="150" y2="120"/>
+    <line x1="50" y1="140" x2="150" y2="140"/>
+    <line x1="50" y1="60" x2="50" y2="140"/>
+    <line x1="150" y1="60" x2="150" y2="140"/>
+  </g>
+  <!-- Bar chart -->
+  <rect x="60" y="90" width="20" height="50" fill="#4169E1" rx="3"/>
+  <rect x="90" y="70" width="20" height="70" fill="#6495ED" rx="3"/>
+  <rect x="120" y="85" width="20" height="55" fill="#4169E1" rx="3"/>
+  <!-- C letter -->
+  <circle cx="100" cy="100" r="30" fill="#4169E1"/>
+  <text x="100" y="112" font-family="Arial, sans-serif" font-size="35" font-weight="bold" fill="white" text-anchor="middle">C</text>
+</svg>

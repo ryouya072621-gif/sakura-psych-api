@@ -4,17 +4,23 @@
     <meta charset="UTF-8">
     <title>さくら会 心理診断テスト</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
-            --sakura-pink: #F8BBD9;
-            --sakura-pink-light: #FCE4EC;
-            --sakura-pink-dark: #E91E8C;
-            --sakura-accent: #D81B60;
+            --sakura-pink: #FFB7C5;
+            --sakura-pink-light: #FFF0F5;
+            --sakura-pink-dark: #DB7093;
+            --sakura-accent: #C71585;
+            --mint-green: #98FB98;
+            --lavender: #E6E6FA;
+            --peach: #FFDAB9;
             --text-dark: #333;
             --text-light: #666;
-            --bg-light: #FFF5F8;
+            --bg-light: #FFF8FA;
             --white: #fff;
-            --shadow: 0 4px 15px rgba(233, 30, 140, 0.15);
+            --shadow: 0 4px 20px rgba(199, 21, 133, 0.12);
         }
 
         * {
@@ -23,7 +29,7 @@
 
         body {
             font-family: "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
-            background: linear-gradient(135deg, var(--bg-light) 0%, #fff 100%);
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--lavender) 50%, var(--peach) 100%);
             min-height: 100vh;
             padding: 20px;
             line-height: 1.7;
@@ -49,7 +55,7 @@
             margin: 20px auto;
             background: var(--white);
             padding: 30px;
-            border-radius: 20px;
+            border-radius: 25px;
             box-shadow: var(--shadow);
         }
 
@@ -58,7 +64,7 @@
             font-size: 1.3rem;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid var(--sakura-pink);
+            border-bottom: 3px solid var(--sakura-pink);
         }
 
         label {
@@ -74,15 +80,72 @@
             width: 100%;
             padding: 12px 15px;
             border: 2px solid var(--sakura-pink);
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 16px;
             margin-bottom: 15px;
-            transition: border-color 0.3s;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background: var(--white);
         }
 
         input:focus, select:focus {
             outline: none;
             border-color: var(--sakura-accent);
+            box-shadow: 0 0 10px rgba(199, 21, 133, 0.2);
+        }
+
+        .tag-group {
+            margin-bottom: 20px;
+        }
+
+        .tag-group-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--sakura-accent);
+        }
+
+        .tag-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag-option {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background: var(--sakura-pink-light);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .tag-option:hover {
+            background: var(--sakura-pink);
+        }
+
+        .tag-option.selected {
+            background: var(--sakura-accent);
+            color: white;
+            border-color: var(--sakura-accent);
+        }
+
+        .tag-option input {
+            display: none;
+        }
+
+        .notice-box {
+            background: linear-gradient(135deg, var(--lavender) 0%, var(--sakura-pink-light) 100%);
+            border-left: 4px solid var(--sakura-accent);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 12px 12px 0;
+            font-size: 14px;
+        }
+
+        .notice-box strong {
+            color: var(--sakura-accent);
         }
 
         .btn {
@@ -101,7 +164,7 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(233, 30, 140, 0.3);
+            box-shadow: 0 6px 25px rgba(199, 21, 133, 0.35);
         }
 
         .btn:active {
@@ -125,16 +188,16 @@
 
         /* 質問画面 */
         .progress-bar {
-            height: 8px;
+            height: 10px;
             background: var(--sakura-pink-light);
-            border-radius: 4px;
+            border-radius: 5px;
             overflow: hidden;
             margin-bottom: 20px;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--sakura-pink-dark), var(--sakura-accent));
+            background: linear-gradient(90deg, var(--sakura-pink), var(--sakura-accent));
             transition: width 0.3s ease;
         }
 
@@ -149,9 +212,9 @@
             font-size: 1.2rem;
             text-align: center;
             margin: 30px 0;
-            padding: 20px;
-            background: var(--sakura-pink-light);
-            border-radius: 15px;
+            padding: 25px;
+            background: linear-gradient(135deg, var(--sakura-pink-light) 0%, var(--lavender) 100%);
+            border-radius: 20px;
         }
 
         .answer-buttons {
@@ -164,7 +227,7 @@
             padding: 15px 20px;
             background: var(--white);
             border: 2px solid var(--sakura-pink);
-            border-radius: 12px;
+            border-radius: 15px;
             cursor: pointer;
             font-size: 15px;
             transition: all 0.2s;
@@ -190,26 +253,64 @@
         .result-header {
             text-align: center;
             padding: 30px;
-            background: linear-gradient(135deg, var(--sakura-pink-light) 0%, #fff 100%);
-            border-radius: 15px;
+            background: linear-gradient(135deg, var(--sakura-pink-light) 0%, var(--lavender) 100%);
+            border-radius: 20px;
             margin-bottom: 25px;
         }
 
         .type-badge {
             display: inline-block;
-            padding: 8px 25px;
-            background: var(--sakura-accent);
+            padding: 10px 30px;
+            background: linear-gradient(135deg, var(--sakura-pink-dark) 0%, var(--sakura-accent) 100%);
             color: white;
-            border-radius: 20px;
-            font-size: 1.2rem;
+            border-radius: 25px;
+            font-size: 1.3rem;
             font-weight: bold;
             margin-bottom: 15px;
+        }
+
+        .type-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 15px auto;
+            background: var(--sakura-pink-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            box-shadow: 0 4px 15px rgba(199, 21, 133, 0.2);
         }
 
         .one-liner {
             font-size: 1.1rem;
             color: var(--text-dark);
             margin-top: 15px;
+        }
+
+        .detailed-description {
+            background: linear-gradient(135deg, var(--peach) 0%, var(--sakura-pink-light) 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 15px;
+            line-height: 1.8;
+            text-align: justify;
+        }
+
+        .relative-note {
+            background: var(--lavender);
+            border: 1px solid var(--sakura-pink);
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-light);
+            margin: 15px 0;
+        }
+
+        .chart-container {
+            max-width: 400px;
+            margin: 20px auto;
         }
 
         .axis-grid {
@@ -219,9 +320,10 @@
         }
 
         .axis-item {
-            padding: 15px;
-            background: var(--sakura-pink-light);
-            border-radius: 12px;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--sakura-pink-light) 0%, var(--white) 100%);
+            border-radius: 15px;
+            border-left: 4px solid var(--sakura-accent);
         }
 
         .axis-name {
@@ -232,7 +334,7 @@
 
         .axis-level {
             display: inline-block;
-            padding: 4px 12px;
+            padding: 4px 14px;
             background: var(--sakura-accent);
             color: white;
             border-radius: 15px;
@@ -248,9 +350,9 @@
 
         .section {
             margin: 25px 0;
-            padding: 20px;
-            background: var(--sakura-pink-light);
-            border-radius: 15px;
+            padding: 22px;
+            background: linear-gradient(135deg, var(--sakura-pink-light) 0%, var(--white) 100%);
+            border-radius: 18px;
         }
 
         .section h3 {
@@ -266,29 +368,108 @@
         }
 
         .section li {
-            padding: 8px 0;
-            padding-left: 25px;
+            padding: 10px 0;
+            padding-left: 28px;
             position: relative;
         }
 
         .section li::before {
-            content: "●";
+            content: "✦";
             position: absolute;
             left: 0;
             color: var(--sakura-accent);
         }
 
+        .info-section {
+            margin: 25px 0;
+            padding: 22px;
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%);
+            border-radius: 18px;
+            border: 2px solid #FFB74D;
+        }
+
+        .info-section h3 {
+            color: #E65100;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .job-fit-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .job-fit-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .job-fit-rank {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .job-fit-rank.rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+        .job-fit-rank.rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); }
+        .job-fit-rank.rank-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); }
+
+        .job-fit-content {
+            flex: 1;
+        }
+
+        .job-fit-name {
+            font-weight: bold;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+
+        .job-fit-desc {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        .job-fit-score {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .job-fit-score-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #E65100;
+        }
+
+        .job-fit-score-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
         .work-style-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
+            gap: 12px;
         }
 
         .work-style-item {
-            padding: 15px;
+            padding: 18px;
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .work-style-label {
@@ -311,39 +492,53 @@
 
         .stress-bar {
             flex: 1;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
+            height: 24px;
+            background: linear-gradient(90deg, #ffcccc 0%, #ffd700 50%, #90EE90 100%);
+            border-radius: 12px;
             overflow: hidden;
+            position: relative;
         }
 
-        .stress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ffcccc, #ff6b6b, #28a745);
-            transition: width 0.5s ease;
+        .stress-indicator {
+            position: absolute;
+            top: -3px;
+            width: 16px;
+            height: 30px;
+            background: var(--sakura-accent);
+            border-radius: 8px;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transform: translateX(-50%);
         }
 
         .stress-label {
             font-weight: bold;
             color: var(--sakura-accent);
-            min-width: 60px;
+            min-width: 70px;
+            font-size: 1.1rem;
+        }
+
+        .stress-note {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 5px;
         }
 
         .email-status {
             margin-top: 20px;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
         }
 
         .email-success {
-            background: #e6fff0;
-            color: #008040;
+            background: linear-gradient(135deg, #e6fff0 0%, #d4edda 100%);
+            color: #155724;
         }
 
         .email-error {
-            background: #ffe6e6;
-            color: #cc0000;
+            background: linear-gradient(135deg, #ffe6e6 0%, #f8d7da 100%);
+            color: #721c24;
         }
 
         .hidden {
@@ -357,9 +552,9 @@
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--sakura-pink);
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--sakura-pink);
             border-top-color: var(--sakura-accent);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -376,14 +571,30 @@
                 padding: 20px;
                 margin: 10px;
             }
-            
+
             h1 {
                 font-size: 1.5rem;
             }
-            
+
             .btn {
                 width: 100%;
                 margin: 5px 0;
+            }
+
+            .type-image {
+                width: 100px;
+                height: 100px;
+                font-size: 50px;
+            }
+        }
+
+        /* 印刷/PDF用スタイル */
+        @media print {
+            body {
+                background: white;
+            }
+            .btn, .btn-group {
+                display: none;
             }
         }
     </style>
@@ -402,16 +613,20 @@
     <label>お名前 <span style="color: #cc0000;">*</span></label>
     <input id="userName" type="text" placeholder="例：田中 太郎">
 
-    <label>メールアドレス <span style="color: #cc0000;">*</span></label>
-    <input id="userEmail" type="email" placeholder="例：example@sakura-kai.jp">
-
     <label>所属カテゴリ</label>
     <select id="userCompany">
         <option value="">選択してください</option>
     </select>
 
-    <label>職種／部署</label>
+    <label>職種／部署（自由入力）</label>
     <input id="userDept" type="text" placeholder="例：歯科衛生士、受付など">
+
+    <div class="notice-box">
+        <strong>💡 ご案内</strong><br>
+        この診断は、さくら会での配置・育成・1on1面談に活用するためのものです。<br>
+        <strong>正直に回答することで、より正確な結果が得られます。</strong><br>
+        合否や評価を直接決めるものではありませんので、リラックスしてお答えください。
+    </div>
 
     <div class="btn-group">
         <button class="btn" onclick="startTest()">診断を開始する →</button>
@@ -424,12 +639,12 @@
 =========================== -->
 <div class="card hidden" id="questionBox">
     <h2>💭 質問に答えてください</h2>
-    
+
     <div class="progress-bar">
         <div class="progress-fill" id="progressFill" style="width: 0%"></div>
     </div>
     <div class="progress-text" id="progressText">質問 1 / 72</div>
-    
+
     <div class="question-text" id="questionText"></div>
 
     <div class="answer-buttons">
@@ -464,10 +679,27 @@
 
     <div id="resultContent" class="hidden">
         <!-- 結果ヘッダー -->
-        <div class="result-header">
+        <div class="result-header" id="resultHeader">
             <p><strong id="resultName"></strong> 様の診断結果</p>
+            <div class="type-image" id="typeImage">🌸</div>
             <div class="type-badge" id="resultType"></div>
             <p class="one-liner" id="resultOneLiner"></p>
+        </div>
+
+        <!-- 詳細解説（200文字） -->
+        <div class="detailed-description" id="detailedDescription"></div>
+
+        <!-- 組織内相対評価の注釈 -->
+        <div class="relative-note">
+            ※ この診断結果は「さくら会」という特定の組織内での相対的な位置付けを示しています。社会全体の平均ではなく、組織内メンバーを4タイプに分類したものです。
+        </div>
+
+        <!-- レーダーチャート -->
+        <div class="section">
+            <h3>📈 あなたの心の構成</h3>
+            <div class="chart-container">
+                <canvas id="radarChart"></canvas>
+            </div>
         </div>
 
         <!-- 4軸の傾向 -->
@@ -511,9 +743,19 @@
             <div class="stress-meter">
                 <span class="stress-label" id="stressLabel">5 / 10</span>
                 <div class="stress-bar">
-                    <div class="stress-fill" id="stressFill" style="width: 50%"></div>
+                    <div class="stress-indicator" id="stressIndicator" style="left: 50%"></div>
                 </div>
             </div>
+            <p class="stress-note">※ 数値が高いほどストレス耐性が高いことを示します</p>
+        </div>
+
+        <!-- 適職ベスト3 -->
+        <div id="jobFitSection" class="info-section hidden">
+            <h3>💼 あなたに合いそうな職種 TOP3</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+                ※ あくまで参考情報です。実際の適性は経験や状況によって異なります。
+            </p>
+            <div id="jobFitList" class="job-fit-list"></div>
         </div>
 
         <!-- メール送信ステータス -->
@@ -521,7 +763,9 @@
 
         <!-- 操作ボタン -->
         <div class="btn-group">
-            <button class="btn" onclick="sendEmail()">📩 結果をメールで受け取る</button>
+            <button class="btn" onclick="downloadPDF()">📄 PDFでダウンロード</button>
+            <button class="btn btn-secondary" onclick="downloadImage()">🖼️ 画像で保存</button>
+            <button class="btn btn-secondary" onclick="sendEmail()">📩 結果をメールで受け取る</button>
             <button class="btn btn-secondary" onclick="resetTest()">🔄 もう一度診断する</button>
         </div>
     </div>
@@ -637,21 +881,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function startTest() {
     const name = document.getElementById("userName").value.trim();
-    const email = document.getElementById("userEmail").value.trim();
     const company = document.getElementById("userCompany").value;
     const dept = document.getElementById("userDept").value.trim();
 
-    if (!name || !email) {
-        alert("お名前とメールアドレスは必須です。");
+    if (!name) {
+        alert("お名前は必須です。");
         return;
     }
 
-    if (!email.includes("@")) {
-        alert("正しいメールアドレスを入力してください。");
-        return;
-    }
-
-    userData = { name, email, company, department: dept };
+    userData = {
+        name,
+        company,
+        department: dept,
+        status: "active"
+    };
     currentIndex = 0;
     answers = [];
 
@@ -665,7 +908,7 @@ function startTest() {
 function showQuestion() {
     const progress = ((currentIndex) / questions.length) * 100;
     document.getElementById("progressFill").style.width = progress + "%";
-    document.getElementById("progressText").innerText = 
+    document.getElementById("progressText").innerText =
         `質問 ${currentIndex + 1} / ${questions.length}`;
     document.getElementById("questionText").innerText = questions[currentIndex];
 }
@@ -751,9 +994,32 @@ function displayResult(data) {
 
     // 基本情報
     document.getElementById("resultName").textContent = userData.name;
-    document.getElementById("resultType").textContent = 
+    document.getElementById("resultType").textContent =
         `${getTypeNameJP(result.type)}（TYPE ${result.type}）`;
     document.getElementById("resultOneLiner").textContent = report.one_liner;
+
+    // タイプ別画像（SVG画像、フォールバックは絵文字）
+    const typeImageEl = document.getElementById("typeImage");
+    const typeImages = {
+        "S": "/static/images/type_s.svg",
+        "P": "/static/images/type_p.svg",
+        "C": "/static/images/type_c.svg",
+        "D": "/static/images/type_d.svg"
+    };
+    const typeEmojis = { "S": "🤝", "P": "☀️", "C": "📊", "D": "🎯" };
+    if (typeImages[result.type]) {
+        typeImageEl.innerHTML = `<img src="${typeImages[result.type]}" alt="TYPE ${result.type}" style="width:100%;height:100%;object-fit:contain;">`;
+    } else {
+        typeImageEl.textContent = typeEmojis[result.type] || "🌸";
+    }
+
+    // 詳細解説
+    if (report.detailed_description) {
+        document.getElementById("detailedDescription").textContent = report.detailed_description;
+    }
+
+    // レーダーチャート
+    renderRadarChart(report.axis_info);
 
     // 4軸
     const axisGrid = document.getElementById("axisGrid");
@@ -821,7 +1087,77 @@ function displayResult(data) {
     // ストレス耐性
     const stressTolerance = report.stress_tolerance;
     document.getElementById("stressLabel").textContent = `${stressTolerance} / 10`;
-    document.getElementById("stressFill").style.width = (stressTolerance * 10) + "%";
+    const stressPct = ((stressTolerance - 1) / 9) * 100;
+    document.getElementById("stressIndicator").style.left = stressPct + "%";
+
+    // 適職ベスト3
+    if (data.job_fit && data.job_fit.length > 0) {
+        const jobFitSection = document.getElementById("jobFitSection");
+        const jobFitList = document.getElementById("jobFitList");
+        jobFitSection.classList.remove("hidden");
+
+        jobFitList.innerHTML = data.job_fit.map((job, index) => `
+            <div class="job-fit-item">
+                <div class="job-fit-rank rank-${index + 1}">${index + 1}</div>
+                <div class="job-fit-content">
+                    <div class="job-fit-name">${job.job_name}</div>
+                    <div class="job-fit-desc">${job.description}</div>
+                </div>
+                <div class="job-fit-score">
+                    <div class="job-fit-score-value">${job.match_score}%</div>
+                    <div class="job-fit-score-label">マッチ度</div>
+                </div>
+            </div>
+        `).join("");
+    } else {
+        document.getElementById("jobFitSection").classList.add("hidden");
+    }
+}
+
+function renderRadarChart(axisInfo) {
+    const ctx = document.getElementById("radarChart").getContext("2d");
+
+    // 既存チャートを破棄
+    if (window.radarChartInstance) {
+        window.radarChartInstance.destroy();
+    }
+
+    const labels = axisInfo.map(a => a.name);
+    const data = axisInfo.map(a => (a.level_index + 1) * 20);
+
+    window.radarChartInstance = new Chart(ctx, {
+        type: "radar",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "あなたの傾向",
+                data: data,
+                fill: true,
+                backgroundColor: "rgba(199, 21, 133, 0.2)",
+                borderColor: "rgba(199, 21, 133, 1)",
+                pointBackgroundColor: "rgba(199, 21, 133, 1)",
+                pointBorderColor: "#fff",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "rgba(199, 21, 133, 1)"
+            }]
+        },
+        options: {
+            elements: {
+                line: { borderWidth: 3 }
+            },
+            scales: {
+                r: {
+                    angleLines: { display: true },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: { stepSize: 20, display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
 }
 
 function getTypeNameJP(type) {
@@ -832,6 +1168,62 @@ function getTypeNameJP(type) {
         "D": "導型"
     };
     return map[type] || type;
+}
+
+async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const element = document.getElementById("resultContent");
+
+    try {
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            logging: false
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const imgWidth = 190;
+        const pageHeight = 277;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 10;
+
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight + 10;
+            pdf.addPage();
+            pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save(`さくら会診断結果_${userData.name}.pdf`);
+    } catch (err) {
+        console.error("PDF generation failed:", err);
+        alert("PDFの生成に失敗しました。");
+    }
+}
+
+async function downloadImage() {
+    const element = document.getElementById("resultContent");
+
+    try {
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            logging: false
+        });
+
+        const link = document.createElement("a");
+        link.download = `さくら会診断結果_${userData.name}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    } catch (err) {
+        console.error("Image generation failed:", err);
+        alert("画像の生成に失敗しました。");
+    }
 }
 
 async function sendEmail() {
@@ -876,10 +1268,9 @@ function resetTest() {
 
     document.getElementById("resultBox").classList.add("hidden");
     document.getElementById("startBox").classList.remove("hidden");
-    
+
     // フォームをクリア
     document.getElementById("userName").value = "";
-    document.getElementById("userEmail").value = "";
     document.getElementById("userCompany").value = "";
     document.getElementById("userDept").value = "";
 }

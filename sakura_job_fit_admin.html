@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>さくら会 心理診断 - 適職プロファイル管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --sakura-pink: #FFB7C5;
+            --sakura-pink-light: #FFF0F5;
+            --sakura-pink-dark: #DB7093;
+            --sakura-accent: #C71585;
+            --mint-green: #98FB98;
+            --lavender: #E6E6FA;
+            --peach: #FFDAB9;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #FFF8FA;
+            --white: #fff;
+            --shadow: 0 4px 15px rgba(199, 21, 133, 0.15);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--lavender) 50%, var(--peach) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.7;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .header {
+            max-width: 1100px;
+            margin: 0 auto 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: var(--sakura-accent);
+            font-size: 1.6rem;
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            max-width: 1100px;
+            margin: 20px auto;
+            background: var(--white);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            color: var(--sakura-accent);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--sakura-pink);
+        }
+
+        .description {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            color: var(--text-dark);
+            border-left: 4px solid #E65100;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--sakura-pink-dark) 0%, var(--sakura-accent) 100%);
+            border: none;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(199, 21, 133, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--sakura-accent);
+            border: 2px solid var(--sakura-accent);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--sakura-pink);
+        }
+
+        th {
+            background: var(--sakura-pink-light);
+            color: var(--sakura-accent);
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: var(--sakura-pink-light);
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            padding: 10px 15px;
+            border: 2px solid var(--sakura-pink);
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--white);
+            width: 100%;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--sakura-accent);
+        }
+
+        input[type="number"] {
+            width: 80px;
+        }
+
+        .editable-cell input {
+            width: 100%;
+            padding: 5px 8px;
+            border: 1px solid transparent;
+            background: transparent;
+        }
+
+        .editable-cell input:focus {
+            border-color: var(--sakura-accent);
+            background: white;
+        }
+
+        .add-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 2fr auto;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: var(--sakura-pink-light);
+            border-radius: 15px;
+        }
+
+        .add-form input, .add-form textarea {
+            padding: 12px;
+        }
+
+        .add-form textarea {
+            resize: vertical;
+            min-height: 40px;
+        }
+
+        .add-form label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .add-form .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .status-message {
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .pc-help {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+
+        .pc-legend {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            border: 2px solid var(--sakura-pink);
+        }
+
+        .pc-legend-item {
+            text-align: center;
+            padding: 10px;
+            background: var(--sakura-pink-light);
+            border-radius: 8px;
+        }
+
+        .pc-legend-item strong {
+            display: block;
+            color: var(--sakura-accent);
+            margin-bottom: 5px;
+        }
+
+        .pc-legend-item span {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        @media (max-width: 900px) {
+            .add-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .add-form {
+                grid-template-columns: 1fr;
+            }
+            table {
+                font-size: 12px;
+            }
+            th, td {
+                padding: 8px;
+            }
+            input[type="number"] {
+                width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>適職プロファイル管理</h1>
+    <div class="header-actions">
+        <a href="/admin" class="btn btn-secondary">管理画面に戻る</a>
+        <a href="/reference-admin" class="btn btn-secondary">参照データ管理</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>適職プロファイル設定</h2>
+
+    <div class="description">
+        <strong>適職マッチング機能について</strong><br>
+        診断結果の「あなたに合いそうな職種 TOP3」で表示される職種データを管理します。<br>
+        各職種にPC1〜PC4の理想値を設定すると、診断者のスコアと比較してマッチ度が計算されます。
+    </div>
+
+    <div class="pc-legend">
+        <div class="pc-legend-item">
+            <strong>PC1（和型）</strong>
+            <span>協調性・サポート志向<br>高い=調和重視</span>
+        </div>
+        <div class="pc-legend-item">
+            <strong>PC2（陽型）</strong>
+            <span>社交性・発信力<br>高い=外向的</span>
+        </div>
+        <div class="pc-legend-item">
+            <strong>PC3（理型）</strong>
+            <span>論理性・慎重さ<br>高い=分析的</span>
+        </div>
+        <div class="pc-legend-item">
+            <strong>PC4（導型）</strong>
+            <span>主体性・リーダーシップ<br>高い=統率型</span>
+        </div>
+    </div>
+
+    <div id="statusMessage" class="status-message"></div>
+
+    <!-- 追加フォーム -->
+    <div class="add-form">
+        <div class="form-group">
+            <label>職種名 *</label>
+            <input type="text" id="newJobName" placeholder="例：歯科衛生士">
+        </div>
+        <div class="form-group">
+            <label>PC1</label>
+            <input type="number" id="newPC1" value="0" step="0.1">
+        </div>
+        <div class="form-group">
+            <label>PC2</label>
+            <input type="number" id="newPC2" value="0" step="0.1">
+        </div>
+        <div class="form-group">
+            <label>PC3</label>
+            <input type="number" id="newPC3" value="0" step="0.1">
+        </div>
+        <div class="form-group">
+            <label>PC4</label>
+            <input type="number" id="newPC4" value="0" step="0.1">
+        </div>
+        <div class="form-group">
+            <label>説明文</label>
+            <input type="text" id="newDescription" placeholder="この職種の特徴を簡潔に">
+        </div>
+        <div class="form-group" style="justify-content: flex-end;">
+            <button class="btn btn-success" onclick="addProfile()">追加</button>
+        </div>
+    </div>
+
+    <!-- プロファイル一覧 -->
+    <table id="profilesTable">
+        <thead>
+            <tr>
+                <th>職種名</th>
+                <th>PC1</th>
+                <th>PC2</th>
+                <th>PC3</th>
+                <th>PC4</th>
+                <th>説明</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="profilesBody">
+        </tbody>
+    </table>
+
+    <div id="emptyState" class="empty-state hidden">
+        <div class="empty-state-icon">💼</div>
+        <p>適職プロファイルがありません</p>
+    </div>
+</div>
+
+<script>
+const API_BASE = "";
+let profiles = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadProfiles();
+});
+
+async function loadProfiles() {
+    try {
+        const response = await fetch(`${API_BASE}/api/job-fit-profiles`);
+        const data = await response.json();
+
+        if (data.ok) {
+            profiles = data.profiles;
+            renderProfiles();
+        }
+    } catch (e) {
+        console.error("Failed to load profiles:", e);
+        showStatus("プロファイルの読み込みに失敗しました", "error");
+    }
+}
+
+function renderProfiles() {
+    const tbody = document.getElementById("profilesBody");
+    const emptyState = document.getElementById("emptyState");
+
+    if (profiles.length === 0) {
+        tbody.innerHTML = "";
+        emptyState.classList.remove("hidden");
+        return;
+    }
+
+    emptyState.classList.add("hidden");
+
+    tbody.innerHTML = profiles.map(p => `
+        <tr data-job="${escapeHtml(p.job_name)}">
+            <td><strong>${escapeHtml(p.job_name)}</strong></td>
+            <td class="editable-cell">
+                <input type="number" value="${p.PC1 || 0}" step="0.1"
+                       onchange="updateProfile('${escapeHtml(p.job_name)}', 'PC1', this.value)">
+            </td>
+            <td class="editable-cell">
+                <input type="number" value="${p.PC2 || 0}" step="0.1"
+                       onchange="updateProfile('${escapeHtml(p.job_name)}', 'PC2', this.value)">
+            </td>
+            <td class="editable-cell">
+                <input type="number" value="${p.PC3 || 0}" step="0.1"
+                       onchange="updateProfile('${escapeHtml(p.job_name)}', 'PC3', this.value)">
+            </td>
+            <td class="editable-cell">
+                <input type="number" value="${p.PC4 || 0}" step="0.1"
+                       onchange="updateProfile('${escapeHtml(p.job_name)}', 'PC4', this.value)">
+            </td>
+            <td class="editable-cell">
+                <input type="text" value="${escapeHtml(p.description || '')}"
+                       onchange="updateProfile('${escapeHtml(p.job_name)}', 'description', this.value)">
+            </td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteProfile('${escapeHtml(p.job_name)}')">削除</button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+async function addProfile() {
+    const jobName = document.getElementById("newJobName").value.trim();
+    const PC1 = parseFloat(document.getElementById("newPC1").value) || 0;
+    const PC2 = parseFloat(document.getElementById("newPC2").value) || 0;
+    const PC3 = parseFloat(document.getElementById("newPC3").value) || 0;
+    const PC4 = parseFloat(document.getElementById("newPC4").value) || 0;
+    const description = document.getElementById("newDescription").value.trim();
+
+    if (!jobName) {
+        showStatus("職種名を入力してください", "error");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/api/job-fit-profiles`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ job_name: jobName, PC1, PC2, PC3, PC4, description })
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            showStatus(`「${jobName}」を追加しました`, "success");
+            // フォームをリセット
+            document.getElementById("newJobName").value = "";
+            document.getElementById("newPC1").value = "0";
+            document.getElementById("newPC2").value = "0";
+            document.getElementById("newPC3").value = "0";
+            document.getElementById("newPC4").value = "0";
+            document.getElementById("newDescription").value = "";
+            loadProfiles();
+        } else {
+            showStatus(data.error || "追加に失敗しました", "error");
+        }
+    } catch (e) {
+        console.error("Failed to add profile:", e);
+        showStatus("追加に失敗しました", "error");
+    }
+}
+
+async function updateProfile(jobName, field, value) {
+    const updateData = {};
+    if (field === "description") {
+        updateData[field] = value;
+    } else {
+        updateData[field] = parseFloat(value) || 0;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/api/job-fit-profiles/${encodeURIComponent(jobName)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updateData)
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            showStatus(`「${jobName}」を更新しました`, "success");
+        } else {
+            showStatus(data.error || "更新に失敗しました", "error");
+            loadProfiles(); // 失敗時はリロード
+        }
+    } catch (e) {
+        console.error("Failed to update profile:", e);
+        showStatus("更新に失敗しました", "error");
+        loadProfiles();
+    }
+}
+
+async function deleteProfile(jobName) {
+    if (!confirm(`「${jobName}」を削除しますか？`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/api/job-fit-profiles/${encodeURIComponent(jobName)}`, {
+            method: "DELETE"
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            showStatus(`「${jobName}」を削除しました`, "success");
+            loadProfiles();
+        } else {
+            showStatus(data.error || "削除に失敗しました", "error");
+        }
+    } catch (e) {
+        console.error("Failed to delete profile:", e);
+        showStatus("削除に失敗しました", "error");
+    }
+}
+
+function showStatus(message, type) {
+    const el = document.getElementById("statusMessage");
+    el.textContent = message;
+    el.className = `status-message ${type}`;
+
+    setTimeout(() => {
+        el.className = "status-message";
+    }, 3000);
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
+
+</body>
+</html>

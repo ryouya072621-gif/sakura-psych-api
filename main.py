@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 import os
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime
 import json
 import uuid
+import csv
+import io
 
 from pathlib import Path
 import pandas as pd
@@ -61,6 +63,48 @@ COMPANY_CATEGORIES = [
     "高校生",
     "その他"
 ]
+
+# =========================
+# タグマスターデータ読み込み
+# =========================
+TAG_MASTER_PATH = DATA_DIR / "tag_master.xlsx"
+
+def load_tag_master():
+    """タグマスターをExcelから読み込み"""
+    if TAG_MASTER_PATH.exists():
+        try:
+            df = pd.read_excel(TAG_MASTER_PATH)
+            result = {}
+            for category in df['category'].unique():
+                result[category] = df[df['category'] == category]['value'].tolist()
+            return result
+        except Exception as e:
+            app.logger.warning(f"tag_master.xlsx読み込みエラー: {e}")
+    # デフォルト値
+    return {
+        "clinics": ["さくら歯科 本院", "さくら歯科 駅前院", "さくら歯科 南院"],
+        "positions": ["歯科医師", "歯科衛生士", "歯科助手", "受付", "事務", "マネージャー"],
+        "areas": ["診療", "予防", "矯正", "インプラント", "審美", "訪問診療"],
+        "status": ["active", "leave", "retired"]
+    }
+
+def save_tag_master(tag_master: dict):
+    """タグマスターをExcelに保存"""
+    records = []
+    for category, values in tag_master.items():
+        for value in values:
+            records.append({"category": category, "value": value})
+    df = pd.DataFrame(records)
+    df.to_excel(TAG_MASTER_PATH, index=False)
+
+TAG_MASTER = load_tag_master()
+
+# ステータスラベル
+STATUS_LABELS = {
+    "active": "在職",
+    "leave": "休職",
+    "retired": "退職済み"
+}
 
 # -----------------------------
 # A01〜B36 → 0〜71 への index 変換
@@ -166,6 +210,32 @@ except Exception:
         pca_loadings_df = pd.read_excel(DATA_DIR / "pca_loadings.xlsx")
 
 cluster_centers_df = pd.read_excel(DATA_DIR / "cluster_centers.xlsx")
+
+# 適職参照データ読み込み（なければ初期データ作成）
+JOB_FIT_FILE = DATA_DIR / "job_fit_profiles.xlsx"
+
+def init_job_fit_data():
+    """適職参照データがなければ初期データを作成"""
+    if JOB_FIT_FILE.exists():
+        return pd.read_excel(JOB_FIT_FILE)
+
+    # デフォルトの職種プロファイル（PC1〜PC4の理想値）
+    default_jobs = [
+        {"job_name": "受付・事務", "PC1": 15.0, "PC2": 5.0, "PC3": 10.0, "PC4": -5.0, "description": "丁寧で協調性が高く、安定した対応ができる"},
+        {"job_name": "歯科衛生士", "PC1": 10.0, "PC2": 8.0, "PC3": 12.0, "PC4": 5.0, "description": "患者対応と専門スキルのバランスが取れている"},
+        {"job_name": "歯科医師", "PC1": 5.0, "PC2": 10.0, "PC3": 15.0, "PC4": 15.0, "description": "専門性とリーダーシップを兼ね備えている"},
+        {"job_name": "歯科助手", "PC1": 18.0, "PC2": 3.0, "PC3": 8.0, "PC4": -3.0, "description": "サポート力が高く、チームワークを大切にする"},
+        {"job_name": "マネージャー", "PC1": 8.0, "PC2": 12.0, "PC3": 8.0, "PC4": 18.0, "description": "人を動かし、組織を引っ張るリーダータイプ"},
+        {"job_name": "カウンセラー", "PC1": 20.0, "PC2": 10.0, "PC3": 5.0, "PC4": 0.0, "description": "傾聴力が高く、人の気持ちに寄り添える"},
+        {"job_name": "技工士", "PC1": 3.0, "PC2": -5.0, "PC3": 18.0, "PC4": 5.0, "description": "緻密な作業と論理的思考が得意"},
+        {"job_name": "広報・マーケティング", "PC1": 5.0, "PC2": 18.0, "PC3": 10.0, "PC4": 10.0, "description": "発信力とクリエイティビティに優れる"},
+    ]
+    df = pd.DataFrame(default_jobs)
+    df.to_excel(JOB_FIT_FILE, index=False)
+    app.logger.info("適職参照データを初期作成しました: job_fit_profiles.xlsx")
+    return df
+
+job_fit_df = init_job_fit_data()
 
 # 列名正規化
 mean_std_df = mean_std_df.rename(columns={
@@ -290,6 +360,74 @@ def get_level_index(value: float) -> int:
 
 
 # =========================
+# 回答信頼性チェック
+# =========================
+def calculate_consistency_score(answers: list) -> dict:
+    """
+    回答の一貫性をチェック
+    類似質問間での回答のばらつきを検出
+    """
+    if not answers or len(answers) != 72:
+        return {"score": 0, "details": [], "warning": "回答データが不完全です"}
+
+    # 関連質問グループ（類似の内容を問う質問）
+    related_groups = [
+        # ストレス関連
+        {"questions": [0, 6, 7, 8, 9, 10, 11, 12, 14, 16, 17], "name": "ストレス対処"},
+        # 外向性関連
+        {"questions": [18, 19, 20, 24, 26, 27], "name": "外向性"},
+        # 主体性関連
+        {"questions": [32, 33, 35, 36, 37, 38, 39, 40, 41], "name": "主体性"},
+        # 継続性関連
+        {"questions": [63, 64, 65, 66, 67, 68, 69, 70], "name": "継続性"},
+    ]
+
+    inconsistencies = []
+    total_variance = 0
+    group_count = 0
+
+    for group in related_groups:
+        indices = group["questions"]
+        values = [answers[i] for i in indices if i < len(answers)]
+        if len(values) >= 3:
+            variance = np.var(values)
+            total_variance += variance
+            group_count += 1
+
+            # 分散が1.5以上なら不一致の可能性
+            if variance > 1.5:
+                inconsistencies.append({
+                    "group": group["name"],
+                    "variance": round(variance, 2),
+                    "message": f"{group['name']}に関する回答にばらつきがあります"
+                })
+
+    # 極端な回答パターンをチェック（全て同じ値など）
+    unique_answers = len(set(answers))
+    if unique_answers <= 3:
+        inconsistencies.append({
+            "group": "全体",
+            "message": "回答パターンが極端です（ほぼ同じ値で回答されています）"
+        })
+
+    # スコア計算（0-100、高いほど一貫性あり）
+    avg_variance = total_variance / group_count if group_count > 0 else 0
+    base_score = max(0, 100 - (avg_variance * 30))
+
+    # 極端な回答パターンのペナルティ
+    if unique_answers <= 3:
+        base_score = min(base_score, 50)
+
+    score = int(round(base_score))
+
+    return {
+        "score": score,
+        "details": inconsistencies,
+        "warning": "回答に一貫性がない可能性があります" if score < 70 else None
+    }
+
+
+# =========================
 # ストレス耐性10段階計算
 # =========================
 def calculate_stress_tolerance(features_55: dict, pc: dict) -> int:
@@ -330,14 +468,72 @@ def calculate_stress_tolerance(features_55: dict, pc: dict) -> int:
 
 
 # =========================
+# 詳細解説文生成（200文字程度、バーナム効果）
+# =========================
+def generate_detailed_description(pc: dict, type_label: str, features_55: dict = None) -> str:
+    """
+    200文字程度の詳細な性格解説を生成
+    バーナム効果を意識した柔らかい表現
+    """
+    pc1, pc2, pc3, pc4 = pc.get("PC1", 0), pc.get("PC2", 0), pc.get("PC3", 0), pc.get("PC4", 0)
+
+    # タイプ別ベース文
+    base_texts = {
+        "S": "あなたは周囲の人の気持ちを敏感に感じ取り、チームの調和を自然と意識できる方です。",
+        "P": "あなたは人との関わりの中でエネルギーを得られる、コミュニケーション豊かな方です。",
+        "C": "あなたは物事を論理的に分析し、着実に成果を積み上げていくことができる方です。",
+        "D": "あなたは目標に向かって自ら道を切り開き、周囲を巻き込んでいく力をお持ちの方です。",
+    }
+
+    # 補足文のバリエーション
+    supplements = []
+
+    if pc1 > 0.3:
+        supplements.append("人の役に立ちたいという気持ちが強く、困っている人を見過ごせない優しさがあります")
+    elif pc1 < -0.3:
+        supplements.append("自分の信念を大切にしながら、ぶれない軸を持って行動できます")
+    else:
+        supplements.append("状況に応じて柔軟に役割を変えられる適応力があります")
+
+    if pc2 > 0.3:
+        supplements.append("初対面の人とも打ち解けやすく、場を和ませる力があります")
+    elif pc2 < -0.3:
+        supplements.append("一人の時間を大切にし、深く考えることで良いアイデアを生み出せます")
+
+    if pc3 > 0.3:
+        supplements.append("細部まで気を配り、ミスを未然に防ぐ注意力があります")
+    elif pc3 < -0.3:
+        supplements.append("直感を信じて素早く行動に移せる決断力があります")
+
+    if pc4 > 0.3:
+        supplements.append("新しいことに挑戦する勇気と、それを実現させる行動力があります")
+    elif pc4 < -0.3:
+        supplements.append("縁の下の力持ちとして、チームを支える頼もしい存在です")
+
+    # バーナム効果を意識した普遍的文
+    universal = "時に自分の能力を過小評価してしまうこともありますが、実際には周囲から信頼されている場面も多いはずです。自分らしさを大切にしながら、得意なことを伸ばしていくことで、さらに輝けるでしょう。"
+
+    base = base_texts.get(type_label, base_texts["S"])
+    supplement_text = "。".join(supplements[:2]) + "。" if supplements else ""
+
+    full_text = base + supplement_text + universal
+
+    # 200文字程度に調整
+    if len(full_text) > 250:
+        full_text = full_text[:247] + "..."
+
+    return full_text
+
+
+# =========================
 # 一言まとめ生成
 # =========================
 def generate_one_liner(pc: dict) -> str:
     """PCスコアから一言まとめを生成"""
     pc1, pc2, pc3, pc4 = pc["PC1"], pc["PC2"], pc["PC3"], pc["PC4"]
-    
+
     traits = []
-    
+
     # 高い傾向を特定
     if pc1 > 0.4:
         traits.append("周囲への気配りができる")
@@ -347,7 +543,7 @@ def generate_one_liner(pc: dict) -> str:
         traits.append("論理的な考え方を重んじる")
     if pc4 > 0.4:
         traits.append("自ら率先して動く")
-    
+
     # 低い傾向も加味
     if pc1 < -0.4:
         traits.append("自分のペースを大切にする")
@@ -357,16 +553,50 @@ def generate_one_liner(pc: dict) -> str:
         traits.append("直感を大切にする")
     if pc4 < -0.4:
         traits.append("サポート役として力を発揮する")
-    
+
     if not traits:
-        return "バランスの取れた柔軟なタイプです"
-    
+        # バランス型：微細な差異から特徴を抽出
+        return generate_balanced_type_one_liner(pc1, pc2, pc3, pc4)
+
     if len(traits) == 1:
         return f"{traits[0]}タイプです"
     elif len(traits) == 2:
         return f"{traits[0]}タイプで、{traits[1]}傾向があります"
     else:
         return f"{traits[0]}タイプで、{traits[1]}傾向があり、{traits[2]}特徴があります"
+
+
+def generate_balanced_type_one_liner(pc1: float, pc2: float, pc3: float, pc4: float) -> str:
+    """バランス型（全ての値が±0.4以内）の場合、微細な差異から特徴を抽出"""
+    pc_values = {"和": pc1, "陽": pc2, "理": pc3, "導": pc4}
+
+    # 最も高い値と最も低い値を取得
+    sorted_pcs = sorted(pc_values.items(), key=lambda x: x[1], reverse=True)
+    highest = sorted_pcs[0]
+    second_highest = sorted_pcs[1]
+    lowest = sorted_pcs[-1]
+
+    # 微細な傾向を表現
+    trait_descriptions = {
+        "和": "協調性を意識しつつ",
+        "陽": "コミュニケーションを大切にしながら",
+        "理": "物事を整理して考えつつ",
+        "導": "主体性を持って",
+    }
+
+    balance_phrases = [
+        "バランスの取れた万能型で、状況に応じて柔軟に役割を変えられます",
+        "特定の偏りがなく、どんな場面にも適応できる柔軟性があります",
+        "4つの特性を状況に応じて使い分けられる、適応力の高いタイプです",
+    ]
+
+    # 相対的な傾向を文章に
+    if highest[1] - lowest[1] > 0.2:  # わずかでも差がある場合
+        return f"{trait_descriptions[highest[0]]}全体的にバランスの取れた柔軟なタイプです"
+    else:
+        # 完全にフラットな場合
+        import random
+        return random.choice(balance_phrases)
 
 
 # =========================
@@ -413,17 +643,58 @@ def generate_strengths_weaknesses(pc: dict) -> dict:
     if pc3 < -0.4 and pc4 > 0.4:
         weaknesses.append("スピード重視で細部の確認が甘くなることがある")
     
-    # デフォルト
-    if not strengths:
-        strengths.append("状況に応じて柔軟に対応できるバランス力がある")
-    
-    if not weaknesses:
-        weaknesses.append("特定の状況に偏りすぎないよう意識すると良い")
-    
+    # バランス型の場合：微細な差異から強み・弱みを生成
+    if not strengths or not weaknesses:
+        balanced_strengths, balanced_weaknesses = generate_balanced_type_sw(pc1, pc2, pc3, pc4)
+        if not strengths:
+            strengths = balanced_strengths
+        if not weaknesses:
+            weaknesses = balanced_weaknesses
+
     return {
         "strengths": strengths,
         "weaknesses": weaknesses
     }
+
+
+def generate_balanced_type_sw(pc1: float, pc2: float, pc3: float, pc4: float) -> tuple:
+    """バランス型の強み・弱みを微細な差異から生成"""
+    pc_values = [("和", pc1), ("陽", pc2), ("理", pc3), ("導", pc4)]
+
+    # 相対的に高い順にソート
+    sorted_pcs = sorted(pc_values, key=lambda x: x[1], reverse=True)
+    relative_high = sorted_pcs[0][0]
+    relative_low = sorted_pcs[-1][0]
+
+    strengths = []
+    weaknesses = []
+
+    # バランス型の基本的な強み
+    strengths.append("状況に応じて柔軟に対応できるバランス力がある")
+    strengths.append("特定の役割に縛られず、様々な場面で力を発揮できる")
+
+    # 相対的に高い傾向から追加の強み
+    high_traits = {
+        "和": "周囲との調和を自然と意識できる",
+        "陽": "必要に応じて発言力を発揮できる",
+        "理": "冷静に状況を分析する視点を持てる",
+        "導": "必要な時には前に出る勇気がある",
+    }
+    strengths.append(high_traits.get(relative_high, "多角的な視点で物事を捉えられる"))
+
+    # バランス型特有の弱み
+    weaknesses.append("どの役割を担うか迷うことがある")
+
+    # 相対的に低い傾向から弱み
+    low_traits = {
+        "和": "チームへの気配りをもう少し意識すると良いかも",
+        "陽": "もう少し積極的に発言しても良い場面がある",
+        "理": "時に立ち止まって確認する習慣があると安心",
+        "導": "自分から提案する機会を増やしても良い",
+    }
+    weaknesses.append(low_traits.get(relative_low, "特定の強みを伸ばすことで更に輝ける"))
+
+    return strengths, weaknesses
 
 
 # =========================
@@ -666,7 +937,10 @@ def generate_type_report(pc: dict, cluster_id: int, type_label: str, features_55
     
     # 採用担当向け情報
     hr_insights = generate_hr_insights(pc, features_55 or {}, stress_tolerance)
-    
+
+    # 詳細解説文（200文字、バーナム効果）
+    detailed_description = generate_detailed_description(pc, type_label, features_55)
+
     # タイプ別サマリー
     type_summary_map = {
         "S": "和型（TYPE S）として、周囲との関係性を大切にしながら、チーム全体の安定に貢献しやすいタイプです。",
@@ -678,10 +952,11 @@ def generate_type_report(pc: dict, cluster_id: int, type_label: str, features_55
         type_label,
         "4つの特性のバランスが比較的フラットで、状況に応じて柔軟に役割を変えやすいタイプです。",
     )
-    
+
     return {
         "summary": summary,
         "one_liner": one_liner,
+        "detailed_description": detailed_description,
         "axis_info": axis_info,
         "strengths": sw["strengths"],
         "weaknesses": sw["weaknesses"],
@@ -693,6 +968,53 @@ def generate_type_report(pc: dict, cluster_id: int, type_label: str, features_55
         "cluster_id": int(cluster_id),
         "type": type_label,
     }
+
+
+# =========================
+# 適職マッチング機能
+# =========================
+def calculate_job_fit(pc: dict, top_n: int = 3) -> list:
+    """
+    ユーザーのPCスコアと各職種の理想プロファイルを比較し、
+    マッチ度の高い順にベスト職種を返す
+    """
+    global job_fit_df
+
+    if job_fit_df is None or job_fit_df.empty:
+        return []
+
+    user_pc = np.array([pc.get("PC1", 0), pc.get("PC2", 0), pc.get("PC3", 0), pc.get("PC4", 0)])
+
+    results = []
+    for _, row in job_fit_df.iterrows():
+        job_pc = np.array([row.get("PC1", 0), row.get("PC2", 0), row.get("PC3", 0), row.get("PC4", 0)])
+
+        # ユークリッド距離を計算
+        distance = np.sqrt(np.sum((user_pc - job_pc) ** 2))
+
+        # 距離を0-100のマッチ度スコアに変換（距離が小さいほど高スコア）
+        # 最大距離を約50と仮定
+        match_score = max(0, min(100, 100 - (distance * 2)))
+
+        results.append({
+            "job_name": row.get("job_name", "不明"),
+            "match_score": round(match_score, 1),
+            "description": row.get("description", ""),
+            "distance": round(distance, 2)
+        })
+
+    # マッチ度でソート
+    results.sort(key=lambda x: x["match_score"], reverse=True)
+
+    return results[:top_n]
+
+
+def reload_job_fit_data():
+    """適職データをリロード"""
+    global job_fit_df
+    if JOB_FIT_FILE.exists():
+        job_fit_df = pd.read_excel(JOB_FIT_FILE)
+    return job_fit_df
 
 
 # =========================
@@ -721,30 +1043,69 @@ def load_result(result_id: str) -> dict:
         return json.load(f)
 
 
-def list_results(company: str = None, department: str = None) -> list:
-    """保存された結果一覧を取得"""
+def list_results(company: str = None, department: str = None, status: str = None,
+                  clinic: str = None, position: str = None, area: str = None) -> list:
+    """保存された結果一覧を取得（拡張フィルタリング対応）"""
     results = []
     for filepath in RESULTS_DIR.glob("*.json"):
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
+            meta = data.get("meta", {})
+            tags = meta.get("tags", {})
+
             # フィルタリング
-            if company and data.get("meta", {}).get("company") != company:
+            if company and meta.get("company") != company:
                 continue
-            if department and data.get("meta", {}).get("department") != department:
+            if department and meta.get("department") != department:
                 continue
+            if status and meta.get("status") != status:
+                continue
+            if clinic and clinic not in tags.get("clinics", []):
+                continue
+            if position and position not in tags.get("positions", []):
+                continue
+            if area and area not in tags.get("areas", []):
+                continue
+
             results.append({
                 "id": data.get("id"),
-                "name": data.get("meta", {}).get("name", "不明"),
-                "company": data.get("meta", {}).get("company", ""),
-                "department": data.get("meta", {}).get("department", ""),
+                "name": meta.get("name", "不明"),
+                "email": meta.get("email", ""),
+                "company": meta.get("company", ""),
+                "department": meta.get("department", ""),
+                "tags": tags,
+                "status": meta.get("status", "active"),
                 "type": data.get("result", {}).get("type", ""),
                 "stress_tolerance": data.get("report", {}).get("stress_tolerance", 0),
+                "consistency_score": data.get("consistency", {}).get("score", None),
                 "created_at": data.get("created_at", ""),
             })
-    
+
     # 新しい順にソート
     results.sort(key=lambda x: x.get("created_at", ""), reverse=True)
     return results
+
+
+def update_result_meta(result_id: str, updates: dict) -> bool:
+    """結果のmeta情報を更新"""
+    filepath = RESULTS_DIR / f"{result_id}.json"
+    if not filepath.exists():
+        return False
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    meta = data.get("meta", {})
+    for key, value in updates.items():
+        if key in ["name", "email", "company", "department", "tags", "status"]:
+            meta[key] = value
+    data["meta"] = meta
+    data["updated_at"] = datetime.now().isoformat()
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return True
 
 
 # =========================
@@ -754,7 +1115,7 @@ def list_results(company: str = None, department: str = None) -> list:
 def add_cors_headers(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
 
 
@@ -775,6 +1136,16 @@ def index():
 @app.get("/admin")
 def admin():
     return send_from_directory(".", "sakura_admin.html")
+
+
+@app.get("/reference-admin")
+def reference_admin():
+    return send_from_directory(".", "sakura_reference_data_admin.html")
+
+
+@app.get("/job-fit-admin")
+def job_fit_admin():
+    return send_from_directory(".", "sakura_job_fit_admin.html")
 
 
 @app.route("/api/sakura_psych", methods=["POST", "OPTIONS"])
@@ -843,6 +1214,21 @@ def api_sakura_psych():
         features_55=features_55,
     )
 
+    # 回答信頼性チェック
+    consistency = calculate_consistency_score(answers) if answers else {"score": None}
+
+    # metaにデフォルトのステータスを設定
+    if "status" not in meta:
+        meta["status"] = "active"
+
+    # 適職ベスト3を計算
+    job_fit = calculate_job_fit({
+        "PC1": result["PC1"],
+        "PC2": result["PC2"],
+        "PC3": result["PC3"],
+        "PC4": result["PC4"],
+    }, top_n=3)
+
     # 結果を保存
     save_data = {
         "meta": meta,
@@ -851,6 +1237,8 @@ def api_sakura_psych():
         "features_55": features_55,
         "features_4axis": raw_features_4axis,
         "answers": answers,
+        "consistency": consistency,
+        "job_fit": job_fit,
     }
     result_id = save_result(save_data)
 
@@ -862,16 +1250,72 @@ def api_sakura_psych():
         "features_55": features_55,
         "features_4axis": raw_features_4axis,
         "meta": meta,
+        "consistency": consistency,
+        "job_fit": job_fit,
     })
 
 
 @app.route("/api/results", methods=["GET"])
 def api_list_results():
-    """保存された結果一覧を取得"""
+    """保存された結果一覧を取得（拡張フィルタリング対応）"""
     company = request.args.get("company")
     department = request.args.get("department")
-    results = list_results(company=company, department=department)
+    status = request.args.get("status")
+    clinic = request.args.get("clinic")
+    position = request.args.get("position")
+    area = request.args.get("area")
+    results = list_results(
+        company=company,
+        department=department,
+        status=status,
+        clinic=clinic,
+        position=position,
+        area=area
+    )
     return jsonify({"ok": True, "results": results})
+
+
+@app.route("/api/results/export", methods=["GET"])
+def api_export_results():
+    """結果をCSV形式でエクスポート"""
+    company = request.args.get("company")
+    status = request.args.get("status")
+    results = list_results(company=company, status=status)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # ヘッダー
+    writer.writerow([
+        "ID", "名前", "メール", "所属カテゴリ", "部署", "クリニック", "職種", "エリア",
+        "ステータス", "タイプ", "ストレス耐性", "信頼性スコア", "診断日時"
+    ])
+
+    # データ
+    for r in results:
+        tags = r.get("tags", {})
+        writer.writerow([
+            r.get("id", ""),
+            r.get("name", ""),
+            r.get("email", ""),
+            r.get("company", ""),
+            r.get("department", ""),
+            ", ".join(tags.get("clinics", [])),
+            ", ".join(tags.get("positions", [])),
+            ", ".join(tags.get("areas", [])),
+            STATUS_LABELS.get(r.get("status", "active"), r.get("status", "")),
+            r.get("type", ""),
+            r.get("stress_tolerance", ""),
+            r.get("consistency_score", ""),
+            r.get("created_at", ""),
+        ])
+
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=sakura_results.csv"}
+    )
 
 
 @app.route("/api/results/<result_id>", methods=["GET"])
@@ -883,10 +1327,254 @@ def api_get_result(result_id):
     return jsonify({"ok": True, "data": result})
 
 
+@app.route("/api/results/<result_id>/meta", methods=["PUT", "OPTIONS"])
+def api_update_result_meta(result_id):
+    """結果のmeta情報を更新"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    data = request.get_json(silent=True) or {}
+    success = update_result_meta(result_id, data)
+
+    if not success:
+        return jsonify({"ok": False, "error": "結果が見つかりません"}), 404
+
+    return jsonify({"ok": True, "message": "更新しました"})
+
+
+@app.route("/api/results/<result_id>/status", methods=["PUT", "OPTIONS"])
+def api_update_result_status(result_id):
+    """結果のステータスを更新"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    data = request.get_json(silent=True) or {}
+    new_status = data.get("status")
+
+    if new_status not in ["active", "leave", "retired"]:
+        return jsonify({"ok": False, "error": "無効なステータスです"}), 400
+
+    success = update_result_meta(result_id, {"status": new_status})
+
+    if not success:
+        return jsonify({"ok": False, "error": "結果が見つかりません"}), 404
+
+    return jsonify({"ok": True, "message": "ステータスを更新しました"})
+
+
 @app.route("/api/company_categories", methods=["GET"])
 def api_company_categories():
     """会社カテゴリ一覧を取得"""
     return jsonify({"ok": True, "categories": COMPANY_CATEGORIES})
+
+
+@app.route("/api/tag_master", methods=["GET"])
+def api_get_tag_master():
+    """タグマスター一覧を取得"""
+    global TAG_MASTER
+    TAG_MASTER = load_tag_master()  # 最新を読み込み
+    return jsonify({"ok": True, "tags": TAG_MASTER, "status_labels": STATUS_LABELS})
+
+
+@app.route("/api/tag_master", methods=["PUT", "OPTIONS"])
+def api_update_tag_master():
+    """タグマスターを更新"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    global TAG_MASTER
+    data = request.get_json(silent=True) or {}
+
+    if "tags" in data:
+        TAG_MASTER = data["tags"]
+        save_tag_master(TAG_MASTER)
+
+    return jsonify({"ok": True, "message": "タグマスターを更新しました"})
+
+
+# =========================
+# 参照データ管理API
+# =========================
+@app.route("/api/reference-data", methods=["GET"])
+def api_get_reference_data():
+    """mean_std_55のデータを取得"""
+    data = mean_std_df.to_dict('records')
+    return jsonify({"ok": True, "data": data})
+
+
+@app.route("/api/reference-data/<feature>", methods=["PUT", "OPTIONS"])
+def api_update_reference_data(feature):
+    """特定の特徴量のmean/stdを更新"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    global mean_std_df
+
+    data = request.get_json(silent=True) or {}
+    new_mean = data.get("mean")
+    new_std = data.get("std")
+
+    if new_mean is None or new_std is None:
+        return jsonify({"ok": False, "error": "mean と std が必要です"}), 400
+
+    # DataFrameを更新
+    mask = mean_std_df["feature"] == feature
+    if not mask.any():
+        return jsonify({"ok": False, "error": f"特徴量 '{feature}' が見つかりません"}), 404
+
+    mean_std_df.loc[mask, "mean"] = float(new_mean)
+    mean_std_df.loc[mask, "std"] = float(new_std)
+
+    # Excelに保存
+    mean_std_df.to_excel(DATA_DIR / "mean_std_55.xlsx", index=False)
+
+    return jsonify({"ok": True, "message": f"'{feature}' を更新しました"})
+
+
+@app.route("/api/reference-data", methods=["POST", "OPTIONS"])
+def api_add_reference_data():
+    """新しい特徴量を追加"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    global mean_std_df
+
+    data = request.get_json(silent=True) or {}
+    feature = data.get("feature")
+    new_mean = data.get("mean")
+    new_std = data.get("std")
+
+    if not feature or new_mean is None or new_std is None:
+        return jsonify({"ok": False, "error": "feature, mean, std が必要です"}), 400
+
+    # 重複チェック
+    if feature in mean_std_df["feature"].values:
+        return jsonify({"ok": False, "error": f"特徴量 '{feature}' は既に存在します"}), 400
+
+    # 追加
+    new_row = pd.DataFrame([{"feature": feature, "mean": float(new_mean), "std": float(new_std)}])
+    mean_std_df = pd.concat([mean_std_df, new_row], ignore_index=True)
+
+    # Excelに保存
+    mean_std_df.to_excel(DATA_DIR / "mean_std_55.xlsx", index=False)
+
+    return jsonify({"ok": True, "message": f"'{feature}' を追加しました"})
+
+
+@app.route("/api/reference-data/<feature>", methods=["DELETE", "OPTIONS"])
+def api_delete_reference_data(feature):
+    """特徴量を削除"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    global mean_std_df
+
+    mask = mean_std_df["feature"] == feature
+    if not mask.any():
+        return jsonify({"ok": False, "error": f"特徴量 '{feature}' が見つかりません"}), 404
+
+    mean_std_df = mean_std_df[~mask].reset_index(drop=True)
+
+    # Excelに保存
+    mean_std_df.to_excel(DATA_DIR / "mean_std_55.xlsx", index=False)
+
+    return jsonify({"ok": True, "message": f"'{feature}' を削除しました"})
+
+
+# =========================
+# 適職データ管理API
+# =========================
+@app.route("/api/job-fit-profiles", methods=["GET"])
+def api_list_job_fit_profiles():
+    """適職プロファイル一覧を取得"""
+    global job_fit_df
+    job_fit_df = reload_job_fit_data()
+
+    if job_fit_df is None or job_fit_df.empty:
+        return jsonify({"ok": True, "profiles": []})
+
+    profiles = job_fit_df.to_dict(orient="records")
+    return jsonify({"ok": True, "profiles": profiles})
+
+
+@app.route("/api/job-fit-profiles/<job_name>", methods=["PUT", "OPTIONS"])
+def api_update_job_fit_profile(job_name):
+    """適職プロファイルを更新"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    global job_fit_df
+
+    data = request.get_json(silent=True) or {}
+
+    mask = job_fit_df["job_name"] == job_name
+    if not mask.any():
+        return jsonify({"ok": False, "error": f"職種 '{job_name}' が見つかりません"}), 404
+
+    # 更新
+    for col in ["PC1", "PC2", "PC3", "PC4", "description"]:
+        if col in data:
+            job_fit_df.loc[mask, col] = data[col]
+
+    # Excelに保存
+    job_fit_df.to_excel(JOB_FIT_FILE, index=False)
+
+    return jsonify({"ok": True, "message": f"'{job_name}' を更新しました"})
+
+
+@app.route("/api/job-fit-profiles", methods=["POST", "OPTIONS"])
+def api_add_job_fit_profile():
+    """新しい適職プロファイルを追加"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    global job_fit_df
+
+    data = request.get_json(silent=True) or {}
+    job_name = data.get("job_name")
+
+    if not job_name:
+        return jsonify({"ok": False, "error": "job_name が必要です"}), 400
+
+    # 重複チェック
+    if job_name in job_fit_df["job_name"].values:
+        return jsonify({"ok": False, "error": f"職種 '{job_name}' は既に存在します"}), 400
+
+    # 追加
+    new_row = pd.DataFrame([{
+        "job_name": job_name,
+        "PC1": float(data.get("PC1", 0)),
+        "PC2": float(data.get("PC2", 0)),
+        "PC3": float(data.get("PC3", 0)),
+        "PC4": float(data.get("PC4", 0)),
+        "description": data.get("description", ""),
+    }])
+    job_fit_df = pd.concat([job_fit_df, new_row], ignore_index=True)
+
+    # Excelに保存
+    job_fit_df.to_excel(JOB_FIT_FILE, index=False)
+
+    return jsonify({"ok": True, "message": f"'{job_name}' を追加しました"})
+
+
+@app.route("/api/job-fit-profiles/<job_name>", methods=["DELETE", "OPTIONS"])
+def api_delete_job_fit_profile(job_name):
+    """適職プロファイルを削除"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    global job_fit_df
+
+    mask = job_fit_df["job_name"] == job_name
+    if not mask.any():
+        return jsonify({"ok": False, "error": f"職種 '{job_name}' が見つかりません"}), 404
+
+    job_fit_df = job_fit_df[~mask].reset_index(drop=True)
+
+    # Excelに保存
+    job_fit_df.to_excel(JOB_FIT_FILE, index=False)
+
+    return jsonify({"ok": True, "message": f"'{job_name}' を削除しました"})
 
 
 # =========================

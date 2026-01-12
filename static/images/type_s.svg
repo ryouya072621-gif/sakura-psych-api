@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bgS" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFF0F5"/>
+      <stop offset="100%" style="stop-color:#FFB7C5"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#bgS)" stroke="#DB7093" stroke-width="3"/>
+  <!-- Heart shape for harmony -->
+  <path d="M100 150 C60 120, 50 80, 100 60 C150 80, 140 120, 100 150" fill="#C71585" opacity="0.8"/>
+  <path d="M100 140 C70 115, 62 85, 100 70 C138 85, 130 115, 100 140" fill="#DB7093"/>
+  <!-- S letter -->
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="white" text-anchor="middle">S</text>
+  <!-- Small sakura petals -->
+  <circle cx="45" cy="45" r="8" fill="#FFB7C5" opacity="0.7"/>
+  <circle cx="155" cy="45" r="8" fill="#FFB7C5" opacity="0.7"/>
+  <circle cx="45" cy="155" r="8" fill="#FFB7C5" opacity="0.7"/>
+  <circle cx="155" cy="155" r="8" fill="#FFB7C5" opacity="0.7"/>
+</svg>

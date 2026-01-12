@@ -4,27 +4,32 @@
     <meta charset="UTF-8">
     <title>さくら会 心理診断 - 管理画面</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --sakura-pink: #F8BBD9;
-            --sakura-pink-light: #FCE4EC;
-            --sakura-pink-dark: #E91E8C;
-            --sakura-accent: #D81B60;
+            --sakura-pink: #FFB7C5;
+            --sakura-pink-light: #FFF0F5;
+            --sakura-pink-dark: #DB7093;
+            --sakura-accent: #C71585;
+            --mint-green: #98FB98;
+            --lavender: #E6E6FA;
+            --peach: #FFDAB9;
             --text-dark: #333;
             --text-light: #666;
-            --bg-light: #FFF5F8;
+            --bg-light: #FFF8FA;
             --white: #fff;
-            --shadow: 0 4px 15px rgba(233, 30, 140, 0.15);
+            --shadow: 0 4px 15px rgba(199, 21, 133, 0.15);
             --success: #28a745;
             --warning: #ffc107;
             --danger: #dc3545;
+            --info: #17a2b8;
         }
 
         * { box-sizing: border-box; }
 
         body {
-            font-family: "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
-            background: linear-gradient(135deg, var(--bg-light) 0%, #fff 100%);
+            font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--lavender) 50%, var(--peach) 100%);
             min-height: 100vh;
             padding: 20px;
             line-height: 1.7;
@@ -33,7 +38,7 @@
         }
 
         .header {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto 30px;
             display: flex;
             justify-content: space-between;
@@ -48,8 +53,14 @@
             margin: 0;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         .card {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 20px auto;
             background: var(--white);
             padding: 25px;
@@ -62,14 +73,15 @@
             font-size: 1.2rem;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid var(--sakura-pink);
+            border-bottom: 3px solid var(--sakura-pink);
         }
 
         .filters {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .filters select, .filters input {
@@ -77,10 +89,30 @@
             border: 2px solid var(--sakura-pink);
             border-radius: 10px;
             font-size: 14px;
+            background: var(--white);
+        }
+
+        .filters select:focus, .filters input:focus {
+            outline: none;
+            border-color: var(--sakura-accent);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: var(--text-light);
+            white-space: nowrap;
         }
 
         .btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
             padding: 10px 20px;
             background: linear-gradient(135deg, var(--sakura-pink-dark) 0%, var(--sakura-accent) 100%);
             border: none;
@@ -90,17 +122,26 @@
             font-size: 14px;
             font-weight: bold;
             transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(233, 30, 140, 0.3);
+            box-shadow: 0 4px 15px rgba(199, 21, 133, 0.3);
         }
 
         .btn-secondary {
             background: var(--white);
             color: var(--sakura-accent);
             border: 2px solid var(--sakura-accent);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
         }
 
         .btn-sm { padding: 6px 12px; font-size: 12px; }
@@ -124,6 +165,8 @@
             color: var(--sakura-accent);
             font-weight: bold;
             white-space: nowrap;
+            position: sticky;
+            top: 0;
         }
 
         tr:hover { background: var(--sakura-pink-light); }
@@ -138,6 +181,18 @@
             font-weight: bold;
         }
 
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-active { background: var(--success); color: white; }
+        .status-leave { background: var(--warning); color: #333; }
+        .status-retired { background: #6c757d; color: white; }
+
         .stress-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -150,6 +205,32 @@
         .stress-high { background: var(--success); }
         .stress-medium { background: var(--warning); color: #333; }
         .stress-low { background: var(--danger); }
+
+        .consistency-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .consistency-high { background: #d4edda; color: #155724; }
+        .consistency-medium { background: #fff3cd; color: #856404; }
+        .consistency-low { background: #f8d7da; color: #721c24; }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--sakura-pink-light);
+            color: var(--sakura-accent);
+            border-radius: 10px;
+            font-size: 10px;
+            margin: 1px;
+        }
+
+        .tags-cell {
+            max-width: 200px;
+        }
 
         .modal-overlay {
             position: fixed;
@@ -185,22 +266,104 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .modal-header h3 { margin: 0; color: var(--sakura-accent); }
 
         .modal-close {
-            position: absolute;
-            right: 20px;
-            top: 20px;
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
             color: var(--text-light);
+            line-height: 1;
         }
 
+        .modal-close:hover { color: var(--sakura-accent); }
+
         .modal-body { padding: 25px; }
+
+        .modal-footer {
+            padding: 15px 25px;
+            background: var(--sakura-pink-light);
+            border-top: 1px solid var(--sakura-pink);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--text-dark);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--sakura-pink);
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--sakura-accent);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .tag-select-group {
+            margin-bottom: 15px;
+        }
+
+        .tag-select-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--sakura-accent);
+        }
+
+        .tag-select-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag-select-option {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            background: var(--sakura-pink-light);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .tag-select-option:hover { background: var(--sakura-pink); }
+
+        .tag-select-option.selected {
+            background: var(--sakura-accent);
+            color: white;
+        }
+
+        .tag-select-option input { display: none; }
 
         .detail-grid {
             display: grid;
@@ -233,7 +396,7 @@
         }
 
         .detail-section li::before {
-            content: "●";
+            content: "\2666";
             position: absolute;
             left: 0;
             color: var(--sakura-accent);
@@ -250,6 +413,7 @@
             min-width: 60px;
             font-weight: bold;
             color: var(--sakura-accent);
+            font-size: 13px;
         }
 
         .axis-level-bar {
@@ -259,20 +423,18 @@
             border-radius: 12px;
             overflow: hidden;
             margin: 0 10px;
-            position: relative;
         }
 
         .axis-level-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--sakura-pink), var(--sakura-accent));
             border-radius: 12px;
-            transition: width 0.5s;
         }
 
         .axis-level-label {
             min-width: 80px;
             text-align: right;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .stress-meter-large {
@@ -309,26 +471,6 @@
             min-width: 80px;
         }
 
-        .hidden { display: none !important; }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-light);
-        }
-
-        .empty-state-icon { font-size: 4rem; margin-bottom: 20px; }
-
-        .tag {
-            display: inline-block;
-            padding: 3px 10px;
-            background: var(--sakura-pink);
-            color: var(--sakura-accent);
-            border-radius: 10px;
-            font-size: 11px;
-            margin: 2px;
-        }
-
         .chatgpt-box {
             background: #f0f7ff;
             border: 2px solid #0078d4;
@@ -337,10 +479,7 @@
             margin-top: 20px;
         }
 
-        .chatgpt-box h4 {
-            color: #0078d4;
-            margin: 0 0 15px 0;
-        }
+        .chatgpt-box h4 { color: #0078d4; margin: 0 0 15px 0; }
 
         .chatgpt-box textarea {
             width: 100%;
@@ -357,53 +496,310 @@
             background: #0078d4;
         }
 
+        /* タグマスター管理 */
+        .tag-manager-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed var(--sakura-pink);
+        }
+
+        .tag-category {
+            margin-bottom: 25px;
+        }
+
+        .tag-category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .tag-category-title {
+            font-weight: bold;
+            color: var(--sakura-accent);
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: var(--sakura-pink-light);
+            border-radius: 15px;
+            font-size: 13px;
+        }
+
+        .tag-item-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .tag-add-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .tag-add-form input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid var(--sakura-pink);
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        .hidden { display: none !important; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon { font-size: 4rem; margin-bottom: 20px; }
+
+        .results-count {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--sakura-pink);
+            padding-bottom: 0;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--sakura-accent);
+        }
+
+        .tab-btn.active {
+            color: var(--sakura-accent);
+            border-bottom-color: var(--sakura-accent);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
         @media (max-width: 768px) {
             .header { flex-direction: column; align-items: flex-start; }
             .filters { flex-direction: column; }
             .filters select, .filters input { width: 100%; }
+            .header-actions { width: 100%; }
+            .header-actions .btn { flex: 1; justify-content: center; }
         }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>🌸 さくら会 心理診断 - 管理画面</h1>
-    <a href="/" class="btn btn-secondary">← 診断画面へ</a>
+    <h1>さくら会 心理診断 - 管理画面</h1>
+    <div class="header-actions">
+        <a href="/" class="btn btn-secondary">診断画面へ</a>
+        <a href="/reference-admin" class="btn btn-info">参照データ管理</a>
+        <a href="/job-fit-admin" class="btn btn-info">適職管理</a>
+        <button class="btn btn-success" onclick="exportCSV()">CSV出力</button>
+    </div>
 </div>
 
 <div class="card">
-    <h2>📋 診断結果一覧</h2>
-    
-    <div class="filters">
-        <select id="filterCompany">
-            <option value="">すべての所属</option>
-        </select>
-        <input type="text" id="filterName" placeholder="名前で検索...">
-        <button class="btn" onclick="loadResults()">🔍 検索</button>
-        <button class="btn btn-secondary" onclick="clearFilters()">クリア</button>
+    <!-- タブナビゲーション -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('results')">診断結果一覧</button>
+        <button class="tab-btn" onclick="switchTab('distribution')">タイプ分布図</button>
+        <button class="tab-btn" onclick="switchTab('tags')">タグマスター管理</button>
     </div>
 
-    <div class="table-container">
-        <table id="resultsTable">
-            <thead>
-                <tr>
-                    <th>診断日時</th>
-                    <th>名前</th>
-                    <th>所属</th>
-                    <th>部署</th>
-                    <th>タイプ</th>
-                    <th>ストレス耐性</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="resultsBody">
-            </tbody>
-        </table>
+    <!-- 診断結果一覧タブ -->
+    <div id="tab-results" class="tab-content active">
+        <div class="filters">
+            <div class="filter-group">
+                <span class="filter-label">所属:</span>
+                <select id="filterCompany">
+                    <option value="">すべて</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">ステータス:</span>
+                <select id="filterStatus">
+                    <option value="">すべて</option>
+                    <option value="active">在職</option>
+                    <option value="leave">休職</option>
+                    <option value="retired">退職済み</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">クリニック:</span>
+                <select id="filterClinic">
+                    <option value="">すべて</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">職種:</span>
+                <select id="filterPosition">
+                    <option value="">すべて</option>
+                </select>
+            </div>
+            <input type="text" id="filterName" placeholder="名前で検索...">
+            <button class="btn" onclick="loadResults()">検索</button>
+            <button class="btn btn-secondary" onclick="clearFilters()">クリア</button>
+        </div>
+
+        <div class="results-count" id="resultsCount"></div>
+
+        <div class="table-container">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>診断日時</th>
+                        <th>名前</th>
+                        <th>ステータス</th>
+                        <th>所属</th>
+                        <th class="tags-cell">タグ</th>
+                        <th>タイプ</th>
+                        <th>ストレス</th>
+                        <th>信頼性</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="emptyState" class="empty-state hidden">
+            <div class="empty-state-icon">📊</div>
+            <p>診断結果がありません</p>
+        </div>
     </div>
 
-    <div id="emptyState" class="empty-state hidden">
-        <div class="empty-state-icon">📊</div>
-        <p>診断結果がありません</p>
+    <!-- タイプ分布図タブ -->
+    <div id="tab-distribution" class="tab-content">
+        <p style="color: var(--text-light); margin-bottom: 20px;">
+            組織全体の4タイプ分布を視覚的に表示します。各点は診断結果を表し、X軸は行動傾向（内向⇔外向）、Y軸は思考傾向（感情⇔論理）を示します。
+        </p>
+
+        <div class="distribution-filters" style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <div class="filter-group">
+                <span class="filter-label">所属:</span>
+                <select id="distFilterCompany">
+                    <option value="">すべて</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">クリニック:</span>
+                <select id="distFilterClinic">
+                    <option value="">すべて</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">職種:</span>
+                <select id="distFilterPosition">
+                    <option value="">すべて</option>
+                </select>
+            </div>
+            <button class="btn" onclick="loadDistribution()">更新</button>
+        </div>
+
+        <div class="distribution-container" style="display: flex; gap: 30px; flex-wrap: wrap;">
+            <div style="flex: 2; min-width: 400px;">
+                <canvas id="distributionChart" width="600" height="500"></canvas>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <div class="distribution-stats" style="background: var(--sakura-pink-light); padding: 20px; border-radius: 15px;">
+                    <h4 style="color: var(--sakura-accent); margin-bottom: 15px;">タイプ別人数</h4>
+                    <div id="typeStats"></div>
+                </div>
+                <div class="distribution-legend" style="margin-top: 20px; background: white; padding: 20px; border-radius: 15px; border: 2px solid var(--sakura-pink);">
+                    <h4 style="color: var(--sakura-accent); margin-bottom: 15px;">凡例</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 16px; height: 16px; background: #DB7093; border-radius: 50%;"></span>
+                            <span>S型（和型）</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 16px; height: 16px; background: #FFA500; border-radius: 50%;"></span>
+                            <span>P型（陽型）</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 16px; height: 16px; background: #4169E1; border-radius: 50%;"></span>
+                            <span>C型（理型）</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 16px; height: 16px; background: #2E7D32; border-radius: 50%;"></span>
+                            <span>D型（導型）</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- タグマスター管理タブ -->
+    <div id="tab-tags" class="tab-content">
+        <p style="color: var(--text-light); margin-bottom: 20px;">
+            診断画面で選択できるタグを管理します。追加・削除した内容は即座に反映されます。
+        </p>
+
+        <div class="tag-category">
+            <div class="tag-category-header">
+                <span class="tag-category-title">所属クリニック</span>
+            </div>
+            <div class="tag-list" id="tagList-clinics"></div>
+            <div class="tag-add-form">
+                <input type="text" id="newTag-clinics" placeholder="新しいクリニック名...">
+                <button class="btn btn-sm" onclick="addTag('clinics')">追加</button>
+            </div>
+        </div>
+
+        <div class="tag-category">
+            <div class="tag-category-header">
+                <span class="tag-category-title">職種</span>
+            </div>
+            <div class="tag-list" id="tagList-positions"></div>
+            <div class="tag-add-form">
+                <input type="text" id="newTag-positions" placeholder="新しい職種名...">
+                <button class="btn btn-sm" onclick="addTag('positions')">追加</button>
+            </div>
+        </div>
+
+        <div class="tag-category">
+            <div class="tag-category-header">
+                <span class="tag-category-title">担当エリア</span>
+            </div>
+            <div class="tag-list" id="tagList-areas"></div>
+            <div class="tag-add-form">
+                <input type="text" id="newTag-areas" placeholder="新しいエリア名...">
+                <button class="btn btn-sm" onclick="addTag('areas')">追加</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -412,34 +808,117 @@
     <div class="modal">
         <div class="modal-header">
             <h3 id="modalTitle">詳細情報</h3>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
         </div>
         <div class="modal-body" id="modalBody">
-            <!-- 動的に挿入 -->
+        </div>
+    </div>
+</div>
+
+<!-- 編集モーダル -->
+<div id="editModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>基本情報の編集</h3>
+            <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editResultId">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>名前</label>
+                    <input type="text" id="editName">
+                </div>
+                <div class="form-group">
+                    <label>メールアドレス</label>
+                    <input type="email" id="editEmail">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>所属カテゴリ</label>
+                    <select id="editCompany"></select>
+                </div>
+                <div class="form-group">
+                    <label>部署（自由入力）</label>
+                    <input type="text" id="editDepartment">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>ステータス</label>
+                <select id="editStatus">
+                    <option value="active">在職</option>
+                    <option value="leave">休職</option>
+                    <option value="retired">退職済み</option>
+                </select>
+            </div>
+
+            <div class="tag-select-group">
+                <div class="tag-select-title">所属クリニック</div>
+                <div class="tag-select-options" id="editClinics"></div>
+            </div>
+
+            <div class="tag-select-group">
+                <div class="tag-select-title">職種</div>
+                <div class="tag-select-options" id="editPositions"></div>
+            </div>
+
+            <div class="tag-select-group">
+                <div class="tag-select-title">担当エリア</div>
+                <div class="tag-select-options" id="editAreas"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('editModal')">キャンセル</button>
+            <button class="btn" onclick="saveEdit()">保存</button>
         </div>
     </div>
 </div>
 
 <script>
 const API_BASE = "";
+let tagMaster = {};
+let editingTags = { clinics: [], positions: [], areas: [] };
+let statusLabels = { active: "在職", leave: "休職", retired: "退職済み" };
 
 // 初期化
 document.addEventListener("DOMContentLoaded", () => {
     loadCompanyCategories();
+    loadTagMaster();
     loadResults();
 });
+
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+}
 
 async function loadCompanyCategories() {
     try {
         const response = await fetch(`${API_BASE}/api/company_categories`);
         const data = await response.json();
         if (data.ok) {
-            const select = document.getElementById("filterCompany");
+            const filterSelect = document.getElementById("filterCompany");
+            const editSelect = document.getElementById("editCompany");
+
+            editSelect.innerHTML = '<option value="">選択してください</option>';
+
             data.categories.forEach(cat => {
-                const option = document.createElement("option");
-                option.value = cat;
-                option.textContent = cat;
-                select.appendChild(option);
+                const option1 = document.createElement("option");
+                option1.value = cat;
+                option1.textContent = cat;
+                filterSelect.appendChild(option1);
+
+                const option2 = document.createElement("option");
+                option2.value = cat;
+                option2.textContent = cat;
+                editSelect.appendChild(option2);
             });
         }
     } catch (e) {
@@ -447,33 +926,147 @@ async function loadCompanyCategories() {
     }
 }
 
+async function loadTagMaster() {
+    try {
+        const response = await fetch(`${API_BASE}/api/tag_master`);
+        const data = await response.json();
+        if (data.ok) {
+            tagMaster = data.tags;
+            statusLabels = data.status_labels || statusLabels;
+
+            // フィルターオプションを更新
+            updateFilterOptions();
+            // タグマスター管理UIを更新
+            renderTagManager();
+        }
+    } catch (e) {
+        console.error("Failed to load tag master:", e);
+    }
+}
+
+function updateFilterOptions() {
+    const clinicSelect = document.getElementById("filterClinic");
+    const positionSelect = document.getElementById("filterPosition");
+
+    clinicSelect.innerHTML = '<option value="">すべて</option>';
+    positionSelect.innerHTML = '<option value="">すべて</option>';
+
+    (tagMaster.clinics || []).forEach(tag => {
+        const option = document.createElement("option");
+        option.value = tag;
+        option.textContent = tag;
+        clinicSelect.appendChild(option);
+    });
+
+    (tagMaster.positions || []).forEach(tag => {
+        const option = document.createElement("option");
+        option.value = tag;
+        option.textContent = tag;
+        positionSelect.appendChild(option);
+    });
+}
+
+function renderTagManager() {
+    ['clinics', 'positions', 'areas'].forEach(category => {
+        const container = document.getElementById(`tagList-${category}`);
+        const tags = tagMaster[category] || [];
+
+        container.innerHTML = tags.map(tag => `
+            <div class="tag-item">
+                <span>${escapeHtml(tag)}</span>
+                <button class="tag-item-remove" onclick="removeTag('${category}', '${escapeHtml(tag)}')">&times;</button>
+            </div>
+        `).join('');
+    });
+}
+
+async function addTag(category) {
+    const input = document.getElementById(`newTag-${category}`);
+    const value = input.value.trim();
+
+    if (!value) {
+        alert("タグ名を入力してください");
+        return;
+    }
+
+    if ((tagMaster[category] || []).includes(value)) {
+        alert("このタグは既に存在します");
+        return;
+    }
+
+    tagMaster[category] = [...(tagMaster[category] || []), value];
+
+    try {
+        await fetch(`${API_BASE}/api/tag_master`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tags: tagMaster })
+        });
+
+        input.value = '';
+        renderTagManager();
+        updateFilterOptions();
+    } catch (e) {
+        console.error("Failed to add tag:", e);
+        alert("タグの追加に失敗しました");
+    }
+}
+
+async function removeTag(category, value) {
+    if (!confirm(`「${value}」を削除しますか？`)) return;
+
+    tagMaster[category] = (tagMaster[category] || []).filter(t => t !== value);
+
+    try {
+        await fetch(`${API_BASE}/api/tag_master`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tags: tagMaster })
+        });
+
+        renderTagManager();
+        updateFilterOptions();
+    } catch (e) {
+        console.error("Failed to remove tag:", e);
+        alert("タグの削除に失敗しました");
+    }
+}
+
 async function loadResults() {
     const company = document.getElementById("filterCompany").value;
+    const status = document.getElementById("filterStatus").value;
+    const clinic = document.getElementById("filterClinic").value;
+    const position = document.getElementById("filterPosition").value;
     const nameFilter = document.getElementById("filterName").value.toLowerCase();
-    
+
+    let params = new URLSearchParams();
+    if (company) params.append('company', company);
+    if (status) params.append('status', status);
+    if (clinic) params.append('clinic', clinic);
+    if (position) params.append('position', position);
+
     let url = `${API_BASE}/api/results`;
-    if (company) {
-        url += `?company=${encodeURIComponent(company)}`;
-    }
+    if (params.toString()) url += `?${params.toString()}`;
 
     try {
         const response = await fetch(url);
         const data = await response.json();
-        
+
         if (!data.ok) {
             console.error("Failed to load results:", data.error);
             return;
         }
 
         let results = data.results;
-        
-        // 名前フィルタ
+
+        // 名前フィルタ（クライアント側）
         if (nameFilter) {
-            results = results.filter(r => 
+            results = results.filter(r =>
                 r.name.toLowerCase().includes(nameFilter)
             );
         }
 
+        document.getElementById("resultsCount").textContent = `${results.length}件の結果`;
         renderResults(results);
     } catch (e) {
         console.error("Failed to load results:", e);
@@ -483,7 +1076,7 @@ async function loadResults() {
 function renderResults(results) {
     const tbody = document.getElementById("resultsBody");
     const emptyState = document.getElementById("emptyState");
-    
+
     if (results.length === 0) {
         tbody.innerHTML = "";
         emptyState.classList.remove("hidden");
@@ -491,20 +1084,44 @@ function renderResults(results) {
     }
 
     emptyState.classList.add("hidden");
-    
-    tbody.innerHTML = results.map(r => `
+
+    tbody.innerHTML = results.map(r => {
+        const tags = r.tags || {};
+        const allTags = [
+            ...(tags.clinics || []),
+            ...(tags.positions || []),
+            ...(tags.areas || [])
+        ];
+        const tagsHtml = allTags.slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+        const moreCount = allTags.length > 3 ? `<span class="tag">+${allTags.length - 3}</span>` : '';
+
+        return `
         <tr>
             <td>${formatDate(r.created_at)}</td>
             <td><strong>${escapeHtml(r.name)}</strong></td>
-            <td><span class="tag">${escapeHtml(r.company) || "-"}</span></td>
-            <td>${escapeHtml(r.department) || "-"}</td>
+            <td>${renderStatusBadge(r.status)}</td>
+            <td>${escapeHtml(r.company) || "-"}</td>
+            <td class="tags-cell">${tagsHtml}${moreCount}</td>
             <td><span class="type-badge">${getTypeNameJP(r.type)}</span></td>
             <td>${renderStressBadge(r.stress_tolerance)}</td>
+            <td>${renderConsistencyBadge(r.consistency_score)}</td>
             <td>
                 <button class="btn btn-sm" onclick="viewDetail('${r.id}')">詳細</button>
+                <button class="btn btn-sm btn-secondary" onclick="openEditModal('${r.id}')">編集</button>
             </td>
         </tr>
-    `).join("");
+    `}).join("");
+}
+
+function renderStatusBadge(status) {
+    const statusClass = {
+        active: 'status-active',
+        leave: 'status-leave',
+        retired: 'status-retired'
+    }[status] || 'status-active';
+
+    const label = statusLabels[status] || '在職';
+    return `<span class="status-badge ${statusClass}">${label}</span>`;
 }
 
 function renderStressBadge(value) {
@@ -513,6 +1130,16 @@ function renderStressBadge(value) {
     if (v >= 7) cls = "stress-high";
     else if (v <= 3) cls = "stress-low";
     return `<span class="stress-badge ${cls}">${v}/10</span>`;
+}
+
+function renderConsistencyBadge(score) {
+    if (score === null || score === undefined) return '-';
+
+    let cls = "consistency-medium";
+    if (score >= 80) cls = "consistency-high";
+    else if (score < 60) cls = "consistency-low";
+
+    return `<span class="consistency-badge ${cls}">${score}%</span>`;
 }
 
 function getTypeNameJP(type) {
@@ -528,23 +1155,41 @@ function formatDate(isoString) {
 
 function escapeHtml(str) {
     if (!str) return "";
-    return str.replace(/&/g, "&amp;")
+    return String(str).replace(/&/g, "&amp;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;")
-              .replace(/"/g, "&quot;");
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
 }
 
 function clearFilters() {
     document.getElementById("filterCompany").value = "";
+    document.getElementById("filterStatus").value = "";
+    document.getElementById("filterClinic").value = "";
+    document.getElementById("filterPosition").value = "";
     document.getElementById("filterName").value = "";
     loadResults();
+}
+
+async function exportCSV() {
+    const company = document.getElementById("filterCompany").value;
+    const status = document.getElementById("filterStatus").value;
+
+    let params = new URLSearchParams();
+    if (company) params.append('company', company);
+    if (status) params.append('status', status);
+
+    let url = `${API_BASE}/api/results/export`;
+    if (params.toString()) url += `?${params.toString()}`;
+
+    window.location.href = url;
 }
 
 async function viewDetail(id) {
     try {
         const response = await fetch(`${API_BASE}/api/results/${id}`);
         const data = await response.json();
-        
+
         if (!data.ok) {
             alert("詳細情報の取得に失敗しました");
             return;
@@ -558,13 +1203,118 @@ async function viewDetail(id) {
     }
 }
 
+async function openEditModal(id) {
+    try {
+        const response = await fetch(`${API_BASE}/api/results/${id}`);
+        const data = await response.json();
+
+        if (!data.ok) {
+            alert("データの取得に失敗しました");
+            return;
+        }
+
+        const meta = data.data.meta || {};
+        const tags = meta.tags || {};
+
+        document.getElementById("editResultId").value = id;
+        document.getElementById("editName").value = meta.name || '';
+        document.getElementById("editEmail").value = meta.email || '';
+        document.getElementById("editCompany").value = meta.company || '';
+        document.getElementById("editDepartment").value = meta.department || '';
+        document.getElementById("editStatus").value = meta.status || 'active';
+
+        editingTags = {
+            clinics: [...(tags.clinics || [])],
+            positions: [...(tags.positions || [])],
+            areas: [...(tags.areas || [])]
+        };
+
+        renderEditTagOptions('clinics', 'editClinics');
+        renderEditTagOptions('positions', 'editPositions');
+        renderEditTagOptions('areas', 'editAreas');
+
+        document.getElementById("editModal").classList.remove("hidden");
+    } catch (e) {
+        console.error("Failed to load data for edit:", e);
+        alert("データの取得に失敗しました");
+    }
+}
+
+function renderEditTagOptions(category, containerId) {
+    const container = document.getElementById(containerId);
+    const allTags = tagMaster[category] || [];
+    const selectedTags = editingTags[category] || [];
+
+    container.innerHTML = allTags.map(tag => {
+        const isSelected = selectedTags.includes(tag);
+        return `
+            <label class="tag-select-option ${isSelected ? 'selected' : ''}"
+                   onclick="toggleEditTag('${category}', '${escapeHtml(tag)}', this)">
+                <input type="checkbox" ${isSelected ? 'checked' : ''}>
+                ${escapeHtml(tag)}
+            </label>
+        `;
+    }).join('');
+}
+
+function toggleEditTag(category, value, element) {
+    const index = editingTags[category].indexOf(value);
+    if (index > -1) {
+        editingTags[category].splice(index, 1);
+        element.classList.remove('selected');
+    } else {
+        editingTags[category].push(value);
+        element.classList.add('selected');
+    }
+}
+
+async function saveEdit() {
+    const id = document.getElementById("editResultId").value;
+    const updates = {
+        name: document.getElementById("editName").value.trim(),
+        email: document.getElementById("editEmail").value.trim(),
+        company: document.getElementById("editCompany").value,
+        department: document.getElementById("editDepartment").value.trim(),
+        status: document.getElementById("editStatus").value,
+        tags: editingTags
+    };
+
+    if (!updates.name) {
+        alert("名前は必須です");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/api/results/${id}/meta`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            closeModal('editModal');
+            loadResults();
+            alert("保存しました");
+        } else {
+            alert("保存に失敗しました: " + (data.error || ""));
+        }
+    } catch (e) {
+        console.error("Failed to save:", e);
+        alert("保存に失敗しました");
+    }
+}
+
 function renderDetailModal(data) {
     const meta = data.meta || {};
     const report = data.report || {};
     const result = data.result || {};
     const hr = report.hr_insights || {};
+    const consistency = data.consistency || {};
+    const tags = meta.tags || {};
 
-    document.getElementById("modalTitle").textContent = 
+    document.getElementById("modalTitle").textContent =
         `${meta.name || "不明"} さんの詳細情報`;
 
     const axisHtml = (report.axis_info || []).map(a => {
@@ -582,39 +1332,66 @@ function renderDetailModal(data) {
 
     const stressPct = ((report.stress_tolerance || 5) - 1) / 9 * 100;
 
+    const allTags = [
+        ...(tags.clinics || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`),
+        ...(tags.positions || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`),
+        ...(tags.areas || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`)
+    ].join('');
+
+    // 信頼性情報
+    let consistencyHtml = '';
+    if (consistency.score !== undefined && consistency.score !== null) {
+        const details = consistency.details || [];
+        consistencyHtml = `
+            <div class="detail-section" style="margin-top: 20px;">
+                <h4>回答の信頼性</h4>
+                <p><strong>スコア:</strong> ${renderConsistencyBadge(consistency.score)}</p>
+                ${consistency.warning ? `<p style="color: var(--warning);"><strong>${consistency.warning}</strong></p>` : ''}
+                ${details.length > 0 ? `
+                    <ul>
+                        ${details.map(d => `<li>${escapeHtml(d.message)}</li>`).join('')}
+                    </ul>
+                ` : ''}
+            </div>
+        `;
+    }
+
     const chatgptPrompt = generateChatGPTPrompt(data);
 
     document.getElementById("modalBody").innerHTML = `
         <div class="detail-grid">
-            <!-- 基本情報 -->
             <div class="detail-section">
-                <h4>👤 基本情報</h4>
+                <h4>基本情報</h4>
                 <p><strong>名前:</strong> ${escapeHtml(meta.name)}</p>
                 <p><strong>メール:</strong> ${escapeHtml(meta.email)}</p>
                 <p><strong>所属:</strong> ${escapeHtml(meta.company) || "-"}</p>
                 <p><strong>部署:</strong> ${escapeHtml(meta.department) || "-"}</p>
+                <p><strong>ステータス:</strong> ${renderStatusBadge(meta.status)}</p>
                 <p><strong>診断日:</strong> ${formatDate(data.created_at)}</p>
                 <p><strong>タイプ:</strong> <span class="type-badge">${getTypeNameJP(result.type)}</span></p>
+                ${allTags ? `<p><strong>タグ:</strong> ${allTags}</p>` : ''}
             </div>
 
-            <!-- 一言まとめ -->
             <div class="detail-section">
-                <h4>💬 一言でまとめると</h4>
+                <h4>一言でまとめると</h4>
                 <p style="font-size: 1.1rem; font-weight: bold; color: var(--sakura-accent);">
                     ${escapeHtml(report.one_liner)}
                 </p>
+                ${report.detailed_description ? `
+                    <p style="margin-top: 15px; font-size: 14px; line-height: 1.8;">
+                        ${escapeHtml(report.detailed_description)}
+                    </p>
+                ` : ''}
             </div>
         </div>
 
-        <!-- 4軸グラフ -->
         <div class="detail-section" style="margin-top: 20px;">
-            <h4>📊 4つの特性</h4>
+            <h4>4つの特性</h4>
             ${axisHtml}
         </div>
 
-        <!-- ストレス耐性 -->
         <div class="detail-section" style="margin-top: 20px;">
-            <h4>🛡️ ストレス耐性（10段階）</h4>
+            <h4>ストレス耐性（10段階）</h4>
             <div class="stress-meter-large">
                 <span class="stress-value">${report.stress_tolerance || 5}/10</span>
                 <div class="stress-bar-large">
@@ -626,18 +1403,18 @@ function renderDetailModal(data) {
             </p>
         </div>
 
+        ${consistencyHtml}
+
         <div class="detail-grid" style="margin-top: 20px;">
-            <!-- 強み -->
             <div class="detail-section">
-                <h4>💪 強み</h4>
+                <h4>強み</h4>
                 <ul>
                     ${(report.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join("")}
                 </ul>
             </div>
 
-            <!-- 弱み -->
             <div class="detail-section">
-                <h4>⚠️ 注意点</h4>
+                <h4>注意点</h4>
                 <ul>
                     ${(report.weaknesses || []).map(w => `<li>${escapeHtml(w)}</li>`).join("")}
                 </ul>
@@ -645,17 +1422,15 @@ function renderDetailModal(data) {
         </div>
 
         <div class="detail-grid" style="margin-top: 20px;">
-            <!-- 良い接し方 -->
             <div class="detail-section">
-                <h4>✅ 良い接し方</h4>
+                <h4>良い接し方</h4>
                 <ul>
                     ${(hr.good_approach || []).map(g => `<li>${escapeHtml(g)}</li>`).join("")}
                 </ul>
             </div>
 
-            <!-- 悪い接し方 -->
             <div class="detail-section">
-                <h4>❌ 避けるべき接し方</h4>
+                <h4>避けるべき接し方</h4>
                 <ul>
                     ${(hr.bad_approach || []).map(b => `<li>${escapeHtml(b)}</li>`).join("")}
                 </ul>
@@ -663,51 +1438,46 @@ function renderDetailModal(data) {
         </div>
 
         <div class="detail-grid" style="margin-top: 20px;">
-            <!-- 面接で聞くべき質問 -->
             <div class="detail-section">
-                <h4>❓ 気をつけて聞くべき質問</h4>
+                <h4>気をつけて聞くべき質問</h4>
                 <ul>
                     ${(hr.interview_questions || []).map(q => `<li>${escapeHtml(q)}</li>`).join("")}
                 </ul>
             </div>
 
-            <!-- 職場適応の注意点 -->
             <div class="detail-section">
-                <h4>📋 職場適応における注意点</h4>
+                <h4>職場適応における注意点</h4>
                 <ul>
                     ${(hr.adaptation_notes || []).map(n => `<li>${escapeHtml(n)}</li>`).join("")}
                 </ul>
             </div>
         </div>
 
-        <!-- 早期離職リスクサイン -->
         <div class="detail-section" style="margin-top: 20px;">
-            <h4>🚨 早期離職のリスクサイン</h4>
+            <h4>早期離職のリスクサイン</h4>
             <ul>
                 ${(hr.turnover_risks || []).map(r => `<li>${escapeHtml(r)}</li>`).join("")}
             </ul>
         </div>
 
-        <!-- ストレス関連 -->
         <div class="detail-grid" style="margin-top: 20px;">
             <div class="detail-section">
-                <h4>😰 ストレスを感じやすい場面</h4>
+                <h4>ストレスを感じやすい場面</h4>
                 <ul>
                     ${(report.stress_situations || []).map(s => `<li>${escapeHtml(s)}</li>`).join("")}
                 </ul>
             </div>
 
             <div class="detail-section">
-                <h4>🌿 ストレス対処法</h4>
+                <h4>ストレス対処法</h4>
                 <ul>
                     ${(report.stress_coping || []).map(c => `<li>${escapeHtml(c)}</li>`).join("")}
                 </ul>
             </div>
         </div>
 
-        <!-- 仕事スタイル -->
         <div class="detail-section" style="margin-top: 20px;">
-            <h4>💼 仕事のスタイル</h4>
+            <h4>仕事のスタイル</h4>
             <div class="detail-grid">
                 <p><strong>協働:</strong> ${escapeHtml(report.work_style?.collaboration)}</p>
                 <p><strong>ペース:</strong> ${escapeHtml(report.work_style?.pace)}</p>
@@ -716,14 +1486,13 @@ function renderDetailModal(data) {
             </div>
         </div>
 
-        <!-- ChatGPT用プロンプト -->
         <div class="chatgpt-box">
-            <h4>🤖 ChatGPTで相性診断をする</h4>
+            <h4>ChatGPTで相性診断をする</h4>
             <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
                 下記のプロンプトをChatGPTにコピペすると、他の候補者との相性診断ができます。
             </p>
             <textarea id="chatgptPrompt" readonly>${escapeHtml(chatgptPrompt)}</textarea>
-            <button class="btn" onclick="copyPrompt()">📋 コピーする</button>
+            <button class="btn" onclick="copyPrompt()">コピーする</button>
         </div>
     `;
 }
@@ -780,23 +1549,220 @@ function copyPrompt() {
     alert("コピーしました！ChatGPTに貼り付けてご利用ください。");
 }
 
-function closeModal() {
-    document.getElementById("detailModal").classList.add("hidden");
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add("hidden");
 }
 
 // モーダル外クリックで閉じる
-document.getElementById("detailModal").addEventListener("click", (e) => {
-    if (e.target === document.getElementById("detailModal")) {
-        closeModal();
-    }
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.classList.add('hidden');
+        }
+    });
 });
 
 // ESCキーで閉じる
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-        closeModal();
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
     }
 });
+
+// ====== 分布図関連 ======
+let distributionChart = null;
+
+function initDistributionFilters() {
+    // 所属フィルター
+    const companySelect = document.getElementById("distFilterCompany");
+    const filterCompany = document.getElementById("filterCompany");
+    if (filterCompany) {
+        Array.from(filterCompany.options).forEach(opt => {
+            if (opt.value) {
+                const newOpt = document.createElement("option");
+                newOpt.value = opt.value;
+                newOpt.textContent = opt.textContent;
+                companySelect.appendChild(newOpt);
+            }
+        });
+    }
+
+    // クリニック・職種フィルター
+    if (tagMaster.clinics) {
+        const clinicSelect = document.getElementById("distFilterClinic");
+        tagMaster.clinics.forEach(clinic => {
+            const opt = document.createElement("option");
+            opt.value = clinic;
+            opt.textContent = clinic;
+            clinicSelect.appendChild(opt);
+        });
+    }
+    if (tagMaster.positions) {
+        const posSelect = document.getElementById("distFilterPosition");
+        tagMaster.positions.forEach(pos => {
+            const opt = document.createElement("option");
+            opt.value = pos;
+            opt.textContent = pos;
+            posSelect.appendChild(opt);
+        });
+    }
+}
+
+async function loadDistribution() {
+    const company = document.getElementById("distFilterCompany").value;
+    const clinic = document.getElementById("distFilterClinic").value;
+    const position = document.getElementById("distFilterPosition").value;
+
+    let params = new URLSearchParams();
+    if (company) params.append('company', company);
+    if (clinic) params.append('clinic', clinic);
+    if (position) params.append('position', position);
+    params.append('status', 'active'); // 在職者のみ
+
+    let url = `${API_BASE}/api/results`;
+    if (params.toString()) url += `?${params.toString()}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.ok) {
+            renderDistributionChart(data.results);
+        }
+    } catch (e) {
+        console.error("Failed to load distribution data:", e);
+    }
+}
+
+function renderDistributionChart(results) {
+    const typeColors = {
+        'S': 'rgba(219, 112, 147, 0.8)',  // ピンク
+        'P': 'rgba(255, 165, 0, 0.8)',     // オレンジ
+        'C': 'rgba(65, 105, 225, 0.8)',    // ブルー
+        'D': 'rgba(46, 125, 50, 0.8)'      // グリーン
+    };
+
+    const typeData = { S: [], P: [], C: [], D: [] };
+    const typeCounts = { S: 0, P: 0, C: 0, D: 0 };
+
+    results.forEach(r => {
+        const type = r.result?.type || 'S';
+        const pc = r.result?.pc || [0, 0];
+        // PC1: 外向性（正が外向）、PC2: 論理性（正が論理的）
+        const x = pc[0] || 0;  // X軸: 外向⇔内向
+        const y = pc[1] || 0;  // Y軸: 論理⇔感情
+
+        if (typeData[type]) {
+            typeData[type].push({
+                x: x,
+                y: y,
+                name: r.meta?.name || '名前不明',
+                id: r.id
+            });
+            typeCounts[type]++;
+        }
+    });
+
+    // 統計表示更新
+    const statsHtml = Object.entries(typeCounts).map(([type, count]) => `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px; background: white; border-radius: 8px;">
+            <span style="font-weight: bold;">${getTypeNameJP(type)}</span>
+            <span style="color: var(--sakura-accent);">${count}名</span>
+        </div>
+    `).join('');
+    document.getElementById("typeStats").innerHTML = statsHtml + `
+        <div style="border-top: 2px solid var(--sakura-pink); padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between;">
+            <span style="font-weight: bold;">合計</span>
+            <span style="color: var(--sakura-accent); font-weight: bold;">${results.length}名</span>
+        </div>
+    `;
+
+    // チャート作成
+    const ctx = document.getElementById('distributionChart').getContext('2d');
+
+    if (distributionChart) {
+        distributionChart.destroy();
+    }
+
+    const datasets = Object.entries(typeData).map(([type, points]) => ({
+        label: getTypeNameJP(type),
+        data: points,
+        backgroundColor: typeColors[type],
+        borderColor: typeColors[type].replace('0.8', '1'),
+        borderWidth: 2,
+        pointRadius: 8,
+        pointHoverRadius: 12
+    }));
+
+    distributionChart = new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const point = context.raw;
+                            return `${point.name} (${context.dataset.label})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: '← 内向的　　　　　外向的 →',
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    min: -3,
+                    max: 3,
+                    grid: {
+                        color: 'rgba(219, 112, 147, 0.2)'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: '← 感情的　　　　　論理的 →',
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    min: -3,
+                    max: 3,
+                    grid: {
+                        color: 'rgba(219, 112, 147, 0.2)'
+                    }
+                }
+            },
+            onClick: (evt, elements) => {
+                if (elements.length > 0) {
+                    const element = elements[0];
+                    const datasetIndex = element.datasetIndex;
+                    const index = element.index;
+                    const point = distributionChart.data.datasets[datasetIndex].data[index];
+                    if (point.id) {
+                        viewDetail(point.id);
+                    }
+                }
+            }
+        }
+    });
+}
+
+// タブ切り替え時に分布図を読み込む
+const originalSwitchTab = switchTab;
+switchTab = function(tabName) {
+    originalSwitchTab(tabName);
+    if (tabName === 'distribution') {
+        initDistributionFilters();
+        loadDistribution();
+    }
+};
 </script>
 
 </body>
