@@ -733,21 +733,6 @@
             <p class="stress-note">※ 数値が高いほどストレス耐性が高いことを示します</p>
         </div>
 
-        <!-- AI相性診断用データ -->
-        <div class="section">
-            <h3>📊 診断スコア（AI分析用）</h3>
-            <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 15px;">
-                以下の数値データを使用してAIによる相性診断や詳細分析が可能です
-            </p>
-            <div class="pc-scores-grid" id="pcScoresGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                <!-- PC1〜PC4がここに表示される -->
-            </div>
-            <div style="margin-top: 15px; padding: 12px; background: var(--sakura-pink-light); border-radius: 10px;">
-                <div style="font-size: 0.8rem; color: var(--text-light);">診断ID: <span id="resultDiagnosisId" style="font-weight: bold; color: var(--sakura-accent);">-</span></div>
-                <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 5px;">クラスター: <span id="resultClusterId" style="font-weight: bold; color: var(--sakura-accent);">-</span></div>
-            </div>
-        </div>
-
         <!-- メール送信ステータス -->
         <div id="emailStatus" class="email-status hidden"></div>
 
@@ -1079,32 +1064,6 @@ function displayResult(data) {
     document.getElementById("stressLabel").textContent = `${stressTolerance} / 10`;
     const stressPct = ((stressTolerance - 1) / 9) * 100;
     document.getElementById("stressIndicator").style.left = stressPct + "%";
-
-    // PC値（AI相性診断用）
-    const pcScoresGrid = document.getElementById("pcScoresGrid");
-    const pcLabels = {
-        PC1: "外向性",
-        PC2: "論理性",
-        PC3: "主体性",
-        PC4: "安定性"
-    };
-    pcScoresGrid.innerHTML = ["PC1", "PC2", "PC3", "PC4"].map(pc => {
-        const value = result[pc] !== undefined ? result[pc].toFixed(2) : "-";
-        return `
-            <div style="background: white; padding: 12px; border-radius: 10px; text-align: center; border: 2px solid var(--sakura-pink);">
-                <div style="font-size: 0.75rem; color: var(--text-light);">${pc}（${pcLabels[pc]}）</div>
-                <div style="font-size: 1.2rem; font-weight: bold; color: var(--sakura-accent);">${value}</div>
-            </div>
-        `;
-    }).join("");
-
-    // 診断ID・クラスターID
-    if (data.id) {
-        document.getElementById("resultDiagnosisId").textContent = data.id;
-    }
-    if (result.cluster_id !== undefined) {
-        document.getElementById("resultClusterId").textContent = result.cluster_id;
-    }
 }
 
 function renderRadarChart(axisInfo) {
