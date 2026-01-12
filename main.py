@@ -1067,6 +1067,7 @@ def list_results(company: str = None, department: str = None, status: str = None
             if area and area not in tags.get("areas", []):
                 continue
 
+            result_obj = data.get("result", {})
             results.append({
                 "id": data.get("id"),
                 "name": meta.get("name", "不明"),
@@ -1075,7 +1076,9 @@ def list_results(company: str = None, department: str = None, status: str = None
                 "department": meta.get("department", ""),
                 "tags": tags,
                 "status": meta.get("status", "active"),
-                "type": data.get("result", {}).get("type", ""),
+                "type": result_obj.get("type", ""),
+                "result": result_obj,  # PC1〜PC4を含むresultオブジェクト
+                "meta": meta,
                 "stress_tolerance": data.get("report", {}).get("stress_tolerance", 0),
                 "consistency_score": data.get("consistency", {}).get("score", None),
                 "created_at": data.get("created_at", ""),

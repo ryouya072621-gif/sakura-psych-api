@@ -1645,17 +1645,16 @@ function renderDistributionChart(results) {
     const typeCounts = { S: 0, P: 0, C: 0, D: 0 };
 
     results.forEach(r => {
-        const type = r.result?.type || 'S';
-        const pc = r.result?.pc || [0, 0];
+        const type = r.result?.type || r.type || 'S';
         // PC1: 外向性（正が外向）、PC2: 論理性（正が論理的）
-        const x = pc[0] || 0;  // X軸: 外向⇔内向
-        const y = pc[1] || 0;  // Y軸: 論理⇔感情
+        const x = r.result?.PC1 || 0;  // X軸: 外向⇔内向
+        const y = r.result?.PC2 || 0;  // Y軸: 論理⇔感情
 
         if (typeData[type]) {
             typeData[type].push({
                 x: x,
                 y: y,
-                name: r.meta?.name || '名前不明',
+                name: r.meta?.name || r.name || '名前不明',
                 id: r.id
             });
             typeCounts[type]++;
