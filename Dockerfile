@@ -10,7 +10,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py .
 COPY sakura_diagnosis.html .
 COPY sakura_admin.html .
+COPY sakura_job_fit_admin.html .
+COPY sakura_reference_data_admin.html .
 COPY model_data/ ./model_data/
+COPY static/ ./static/
 
 # 結果保存用ディレクトリを作成
 RUN mkdir -p results
