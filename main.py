@@ -12,6 +12,17 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+# ===== Firebase/Firestore =====
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# Firebase初期化（Cloud Run環境では自動認証）
+if not firebase_admin._apps:
+    firebase_admin.initialize_app()
+
+db = firestore.client()
+FIRESTORE_COLLECTION = "diagnosis_results"
+
 # ===== Flask アプリ設定 =====
 app = Flask(__name__, static_folder=".", static_url_path="")
 
@@ -1021,68 +1032,107 @@ def reload_job_fit_data():
 # 結果保存・読み込み
 # =========================
 def save_result(result_data: dict) -> str:
-    """結果をJSONファイルに保存し、IDを返す"""
+    """結果をFirestoreに保存し、IDを返す"""
     result_id = str(uuid.uuid4())[:8]
     result_data["id"] = result_id
     result_data["created_at"] = datetime.now().isoformat()
-    
-    filepath = RESULTS_DIR / f"{result_id}.json"
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(result_data, f, ensure_ascii=False, indent=2)
-    
+
+    # Firestore用にデータ整形
+    doc_data = {
+        "id": result_id,
+        "answers_raw": result_data.get("answers", []),
+        "factors_55": result_data.get("features_55", {}),
+        "factors_55_z": {},
+        "flags": {
+            "is_valid": True,
+            "is_complete": True,
+            "data_version": "3.0",
+            "is_test": False
+        },
+        "meta": result_data.get("meta", {}),
+        "pc_values": {
+            "PC1": result_data.get("result", {}).get("PC1", 0),
+            "PC2": result_data.get("result", {}).get("PC2", 0),
+            "PC3": result_data.get("result", {}).get("PC3", 0),
+            "PC4": result_data.get("result", {}).get("PC4", 0),
+        },
+        "report": result_data.get("report", {}),
+        "result": result_data.get("result", {}),
+        "consistency": result_data.get("consistency", {}),
+        "created_at": firestore.SERVER_TIMESTAMP,
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    }
+
+    # Firestoreに保存
+    db.collection(FIRESTORE_COLLECTION).document(result_id).set(doc_data)
+
     return result_id
 
 
 def load_result(result_id: str) -> dict:
-    """保存された結果を読み込む"""
-    filepath = RESULTS_DIR / f"{result_id}.json"
-    if not filepath.exists():
+    """Firestoreから結果を読み込む"""
+    doc = db.collection(FIRESTORE_COLLECTION).document(result_id).get()
+    if not doc.exists:
         return None
-    
-    with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
+    return doc.to_dict()
 
 
 def list_results(company: str = None, department: str = None, status: str = None,
                   clinic: str = None, position: str = None, area: str = None) -> list:
-    """保存された結果一覧を取得（拡張フィルタリング対応）"""
+    """Firestoreから結果一覧を取得（拡張フィルタリング対応）"""
     results = []
-    for filepath in RESULTS_DIR.glob("*.json"):
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            meta = data.get("meta", {})
-            tags = meta.get("tags", {})
 
-            # フィルタリング
-            if company and meta.get("company") != company:
-                continue
-            if department and meta.get("department") != department:
-                continue
-            if status and meta.get("status") != status:
-                continue
-            if clinic and clinic not in tags.get("clinics", []):
-                continue
-            if position and position not in tags.get("positions", []):
-                continue
-            if area and area not in tags.get("areas", []):
-                continue
+    # Firestoreからデータ取得
+    query = db.collection(FIRESTORE_COLLECTION)
 
-            result_obj = data.get("result", {})
-            results.append({
-                "id": data.get("id"),
-                "name": meta.get("name", "不明"),
-                "email": meta.get("email", ""),
-                "company": meta.get("company", ""),
-                "department": meta.get("department", ""),
-                "tags": tags,
-                "status": meta.get("status", "active"),
-                "type": result_obj.get("type", ""),
-                "result": result_obj,  # PC1〜PC4を含むresultオブジェクト
-                "meta": meta,
-                "stress_tolerance": data.get("report", {}).get("stress_tolerance", 0),
-                "consistency_score": data.get("consistency", {}).get("score", None),
-                "created_at": data.get("created_at", ""),
-            })
+    # 基本的なフィルタリング（Firestoreで可能なもの）
+    # 注意: Firestoreは複合クエリに制限があるため、一部はPython側でフィルタリング
+
+    docs = query.stream()
+
+    for doc in docs:
+        data = doc.to_dict()
+        meta = data.get("meta", {})
+        tags = meta.get("tags", {})
+
+        # Python側でフィルタリング
+        if company and meta.get("company") != company:
+            continue
+        if department and meta.get("department") != department:
+            continue
+        if status and meta.get("status") != status:
+            continue
+        if clinic and clinic not in tags.get("clinics", []):
+            continue
+        if position and position not in tags.get("positions", []):
+            continue
+        if area and area not in tags.get("areas", []):
+            continue
+
+        result_obj = data.get("result", {})
+
+        # created_atの変換（Firestore Timestampの場合）
+        created_at = data.get("created_at", "")
+        if hasattr(created_at, 'isoformat'):
+            created_at = created_at.isoformat()
+        elif hasattr(created_at, 'timestamp'):
+            created_at = datetime.fromtimestamp(created_at.timestamp()).isoformat()
+
+        results.append({
+            "id": data.get("id"),
+            "name": meta.get("name", "不明"),
+            "email": meta.get("email", ""),
+            "company": meta.get("company", ""),
+            "department": meta.get("department", ""),
+            "tags": tags,
+            "status": meta.get("status", "active"),
+            "type": result_obj.get("type", ""),
+            "result": result_obj,  # PC1〜PC4を含むresultオブジェクト
+            "meta": meta,
+            "stress_tolerance": data.get("report", {}).get("stress_tolerance", 0),
+            "consistency_score": data.get("consistency", {}).get("score", None),
+            "created_at": created_at,
+        })
 
     # 新しい順にソート
     results.sort(key=lambda x: x.get("created_at", ""), reverse=True)
@@ -1090,24 +1140,20 @@ def list_results(company: str = None, department: str = None, status: str = None
 
 
 def update_result_meta(result_id: str, updates: dict) -> bool:
-    """結果のmeta情報を更新"""
-    filepath = RESULTS_DIR / f"{result_id}.json"
-    if not filepath.exists():
+    """Firestoreのmeta情報を更新"""
+    doc_ref = db.collection(FIRESTORE_COLLECTION).document(result_id)
+    doc = doc_ref.get()
+
+    if not doc.exists:
         return False
 
-    with open(filepath, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    meta = data.get("meta", {})
+    # metaフィールドを更新
+    update_data = {"updated_at": firestore.SERVER_TIMESTAMP}
     for key, value in updates.items():
         if key in ["name", "email", "company", "department", "tags", "status"]:
-            meta[key] = value
-    data["meta"] = meta
-    data["updated_at"] = datetime.now().isoformat()
+            update_data[f"meta.{key}"] = value
 
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
+    doc_ref.update(update_data)
     return True
 
 
