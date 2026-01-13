@@ -333,12 +333,10 @@ def compute_pc_and_type_from_features(raw_features: dict) -> dict:
     best_row = centers.loc[best_idx]
     cluster_id = int(best_row["cluster_id"])
 
-    dominant_axis = np.array(
-        [best_row["PC1"], best_row["PC2"], best_row["PC3"], best_row["PC4"]]
-    ).argmax()
-
-    axis_to_type = {0: "S", 1: "P", 2: "C", 3: "D"}
-    main_type = axis_to_type[dominant_axis]
+    # クラスターIDから直接タイプを決定（4タイプ均等分布）
+    # クラスター0→D型, 1→S型, 2→C型, 3→P型
+    cluster_to_type = {0: "D", 1: "S", 2: "C", 3: "P"}
+    main_type = cluster_to_type.get(cluster_id, "S")
 
     return {
         "PC1": pcs["PC1"],
