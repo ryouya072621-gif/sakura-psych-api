@@ -95,7 +95,7 @@ def load_tag_master():
     return {
         "clinics": ["さくら歯科 本院", "さくら歯科 駅前院", "さくら歯科 南院"],
         "positions": ["歯科医師", "歯科衛生士", "歯科助手", "受付", "事務", "マネージャー"],
-        "areas": ["診療", "予防", "矯正", "インプラント", "審美", "訪問診療"],
+        "areas": [],
         "status": ["active", "leave", "retired"]
     }
 
