@@ -1055,13 +1055,13 @@ function displayResult(data) {
         `${getTypeNameJP(result.type)}（TYPE ${result.type}）`;
     document.getElementById("resultOneLiner").textContent = report.one_liner;
 
-    // タイプ別画像（SVG画像、フォールバックは絵文字）
+    // タイプ別画像（PNG画像、フォールバックは絵文字）
     const typeImageEl = document.getElementById("typeImage");
     const typeImages = {
-        "S": "/static/images/type_s.svg",
-        "P": "/static/images/type_p.svg",
-        "C": "/static/images/type_c.svg",
-        "D": "/static/images/type_d.svg"
+        "S": "/static/images/type_s.png",
+        "P": "/static/images/type_p.png",
+        "C": "/static/images/type_c.png",
+        "D": "/static/images/type_d.png"
     };
     const typeEmojis = { "S": "🤝", "P": "☀️", "C": "📊", "D": "🎯" };
     if (typeImages[result.type]) {
