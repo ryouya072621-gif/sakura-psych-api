@@ -2294,6 +2294,256 @@ def api_send_email():
 
 
 # =========================
+# 相性診断API
+# =========================
+
+# タイプ相性マトリクス（基本スコア）
+# D: 導型, S: 和型, C: 理型, P: 陽型
+TYPE_COMPATIBILITY_MATRIX = {
+    ("D", "D"): 70,  # 同タイプ: 似すぎて衝突しやすい
+    ("D", "S"): 85,  # 導×和: リーダーとサポーターで好相性
+    ("D", "C"): 75,  # 導×理: 論理的な補佐役として機能
+    ("D", "P"): 60,  # 導×陽: 両方主張が強く衝突しやすい
+    ("S", "D"): 85,
+    ("S", "S"): 75,  # 同タイプ: 穏やかだが決断力に欠ける
+    ("S", "C"): 90,  # 和×理: 最も安定した組み合わせ
+    ("S", "P"): 70,  # 和×陽: 陽がリードしすぎる傾向
+    ("C", "D"): 75,
+    ("C", "S"): 90,
+    ("C", "C"): 70,  # 同タイプ: 慎重すぎて進まない
+    ("C", "P"): 80,  # 理×陽: 分析と発信のバランス
+    ("P", "D"): 60,
+    ("P", "S"): 70,
+    ("P", "C"): 80,
+    ("P", "P"): 65,  # 同タイプ: 競争的になりやすい
+}
+
+# タイプ相性コメント
+TYPE_COMPATIBILITY_COMMENTS = {
+    ("D", "D"): {
+        "summary": "リーダー同士の組み合わせ",
+        "strengths": ["決断力が高く、物事を推進できる", "目標達成への意識が強い"],
+        "challenges": ["主導権争いになりやすい", "意見が対立した際に譲り合いが難しい"],
+        "advice": "役割分担を明確にし、それぞれの担当領域を尊重することが大切です"
+    },
+    ("D", "S"): {
+        "summary": "リーダーとサポーターの理想的な組み合わせ",
+        "strengths": ["導型がリードし、和型がフォロー", "チームとしてバランスが取れる"],
+        "challenges": ["和型の意見が埋もれやすい"],
+        "advice": "導型は和型の意見を積極的に聞く姿勢を持ちましょう"
+    },
+    ("D", "C"): {
+        "summary": "決断力と分析力の組み合わせ",
+        "strengths": ["導型の決断を理型が論理的に補佐", "計画と実行のバランス"],
+        "challenges": ["理型の慎重さが導型には遅く感じることも"],
+        "advice": "理型の分析を尊重しつつ、スピード感も意識しましょう"
+    },
+    ("D", "P"): {
+        "summary": "二人とも前に出たいタイプ",
+        "strengths": ["エネルギッシュで推進力がある", "積極的に物事を進められる"],
+        "challenges": ["主張がぶつかりやすい", "譲り合いが難しい場面も"],
+        "advice": "お互いの強みを認め合い、競争より協力を意識しましょう"
+    },
+    ("S", "S"): {
+        "summary": "穏やかで協調的な組み合わせ",
+        "strengths": ["争いが少なく穏やかな関係", "互いを尊重し合える"],
+        "challenges": ["決断が遅くなりがち", "リーダーシップが不足することも"],
+        "advice": "どちらかが意識的に決断役を担うと良いでしょう"
+    },
+    ("S", "C"): {
+        "summary": "最も安定感のある組み合わせ",
+        "strengths": ["和型の協調性と理型の正確さが噛み合う", "安定したチームワーク"],
+        "challenges": ["変化への対応が遅くなる可能性"],
+        "advice": "お互いの強みを活かし、安定感を武器にしましょう"
+    },
+    ("S", "P"): {
+        "summary": "サポーターと発信者の組み合わせ",
+        "strengths": ["陽型が引っ張り、和型がフォロー", "外向的なバランス"],
+        "challenges": ["陽型のペースに和型が合わせすぎることも"],
+        "advice": "和型も自分の意見を伝えることを意識しましょう"
+    },
+    ("C", "C"): {
+        "summary": "分析派同士の組み合わせ",
+        "strengths": ["論理的で正確な判断ができる", "ミスが少ない"],
+        "challenges": ["慎重になりすぎて進まない", "決断に時間がかかる"],
+        "advice": "ある程度で判断を下すタイミングを決めておきましょう"
+    },
+    ("C", "P"): {
+        "summary": "分析力と発信力の組み合わせ",
+        "strengths": ["理型の分析を陽型が発信", "内容と伝え方のバランス"],
+        "challenges": ["アプローチの違いで意見が分かれることも"],
+        "advice": "理型は発信を、陽型は深掘りを互いに学び合いましょう"
+    },
+    ("P", "P"): {
+        "summary": "社交的なエネルギッシュコンビ",
+        "strengths": ["明るく活気のある雰囲気", "発信力・影響力が強い"],
+        "challenges": ["競争的になりやすい", "地道な作業が疎かになることも"],
+        "advice": "役割を分けて、お互いの活躍の場を作りましょう"
+    },
+}
+
+
+def calculate_compatibility(data1: dict, data2: dict) -> dict:
+    """
+    2人の診断結果から相性を計算する
+
+    Args:
+        data1: 1人目の診断データ（result, meta, reportを含む）
+        data2: 2人目の診断データ
+
+    Returns:
+        相性スコアと詳細情報
+    """
+    result1 = data1.get("result", {})
+    result2 = data2.get("result", {})
+
+    type1 = result1.get("type", "S")
+    type2 = result2.get("type", "S")
+
+    # タイプ相性の基本スコア
+    type_score = TYPE_COMPATIBILITY_MATRIX.get((type1, type2), 70)
+
+    # PCスコアの距離計算
+    pc1 = np.array([
+        result1.get("PC1", 0),
+        result1.get("PC2", 0),
+        result1.get("PC3", 0),
+        result1.get("PC4", 0)
+    ])
+    pc2 = np.array([
+        result2.get("PC1", 0),
+        result2.get("PC2", 0),
+        result2.get("PC3", 0),
+        result2.get("PC4", 0)
+    ])
+
+    distance = float(np.sqrt(np.sum((pc1 - pc2) ** 2)))
+
+    # 距離による調整（近いほどプラス、遠いほどマイナス）
+    # 距離0で+20、距離100で-20
+    adjustment = max(-20, min(20, (50 - distance) / 2.5))
+
+    # 最終スコア
+    final_score = type_score + adjustment
+    final_score = max(0, min(100, final_score))
+
+    # 相性コメント取得
+    comment_key = (type1, type2)
+    if comment_key not in TYPE_COMPATIBILITY_COMMENTS:
+        comment_key = (type2, type1)
+
+    comments = TYPE_COMPATIBILITY_COMMENTS.get(comment_key, {
+        "summary": "相性情報",
+        "strengths": [],
+        "challenges": [],
+        "advice": ""
+    })
+
+    # スコアに応じたラベル
+    if final_score >= 85:
+        score_label = "とても良い"
+        score_emoji = "💕"
+    elif final_score >= 75:
+        score_label = "良い"
+        score_emoji = "😊"
+    elif final_score >= 65:
+        score_label = "普通"
+        score_emoji = "🙂"
+    elif final_score >= 55:
+        score_label = "やや注意"
+        score_emoji = "🤔"
+    else:
+        score_label = "要配慮"
+        score_emoji = "⚠️"
+
+    return {
+        "score": round(final_score, 1),
+        "score_label": score_label,
+        "score_emoji": score_emoji,
+        "type_score": type_score,
+        "distance": round(distance, 2),
+        "adjustment": round(adjustment, 1),
+        "type1": type1,
+        "type2": type2,
+        "comments": comments
+    }
+
+
+@app.route("/api/compatibility", methods=["POST", "OPTIONS"])
+def api_compatibility():
+    """2人の診断結果の相性を計算"""
+    if request.method == "OPTIONS":
+        return "", 204
+
+    try:
+        body = request.get_json()
+        id1 = body.get("id1")
+        id2 = body.get("id2")
+
+        if not id1 or not id2:
+            return jsonify({"ok": False, "error": "id1とid2が必要です"}), 400
+
+        if id1 == id2:
+            return jsonify({"ok": False, "error": "同じ人は比較できません"}), 400
+
+        # Firestoreからデータ取得
+        doc1 = db.collection(FIRESTORE_COLLECTION).document(id1).get()
+        doc2 = db.collection(FIRESTORE_COLLECTION).document(id2).get()
+
+        if not doc1.exists:
+            return jsonify({"ok": False, "error": f"ID {id1} が見つかりません"}), 404
+        if not doc2.exists:
+            return jsonify({"ok": False, "error": f"ID {id2} が見つかりません"}), 404
+
+        data1 = doc1.to_dict()
+        data2 = doc2.to_dict()
+
+        # 相性計算
+        compatibility = calculate_compatibility(data1, data2)
+
+        # レスポンスに人物情報も含める
+        meta1 = data1.get("meta", {})
+        meta2 = data2.get("meta", {})
+        result1 = data1.get("result", {})
+        result2 = data2.get("result", {})
+        report1 = data1.get("report", {})
+        report2 = data2.get("report", {})
+
+        return jsonify({
+            "ok": True,
+            "compatibility": compatibility,
+            "person1": {
+                "id": id1,
+                "name": meta1.get("name", "不明"),
+                "type": result1.get("type", "S"),
+                "type_name": AXIS_NAMES_JP.get(f"PC{['D','S','C','P'].index(result1.get('type', 'S'))+1}", ""),
+                "PC1": result1.get("PC1", 0),
+                "PC2": result1.get("PC2", 0),
+                "PC3": result1.get("PC3", 0),
+                "PC4": result1.get("PC4", 0),
+                "axis_info": report1.get("axis_info", []),
+                "stress_tolerance": report1.get("stress_tolerance", 5)
+            },
+            "person2": {
+                "id": id2,
+                "name": meta2.get("name", "不明"),
+                "type": result2.get("type", "S"),
+                "type_name": AXIS_NAMES_JP.get(f"PC{['D','S','C','P'].index(result2.get('type', 'S'))+1}", ""),
+                "PC1": result2.get("PC1", 0),
+                "PC2": result2.get("PC2", 0),
+                "PC3": result2.get("PC3", 0),
+                "PC4": result2.get("PC4", 0),
+                "axis_info": report2.get("axis_info", []),
+                "stress_tolerance": report2.get("stress_tolerance", 5)
+            }
+        })
+
+    except Exception as e:
+        app.logger.exception("compatibility API error: %s", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# =========================
 # ローカル実行用
 # =========================
 if __name__ == "__main__":

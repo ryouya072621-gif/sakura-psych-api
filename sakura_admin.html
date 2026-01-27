@@ -615,6 +615,237 @@
             .header-actions { width: 100%; }
             .header-actions .btn { flex: 1; justify-content: center; }
         }
+
+        /* 相性診断モーダル */
+        .compatibility-container {
+            padding: 10px;
+        }
+
+        .compatibility-score-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff5f8 0%, #f0f7ff 100%);
+            border-radius: 20px;
+        }
+
+        .compatibility-score-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 6px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .score-emoji {
+            font-size: 28px;
+        }
+
+        .score-number {
+            font-size: 36px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .compatibility-summary h4 {
+            margin: 0 0 10px 0;
+            color: var(--sakura-accent);
+            font-size: 20px;
+        }
+
+        .score-breakdown {
+            color: #888;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .compatibility-persons {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            align-items: stretch;
+        }
+
+        .person-card {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 2px solid #f0f0f0;
+        }
+
+        .person-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--sakura-pink-light);
+        }
+
+        .person-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .compatibility-vs {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--sakura-accent);
+            min-width: 50px;
+        }
+
+        .person-axis {
+            margin-bottom: 15px;
+        }
+
+        .axis-bar-mini {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+
+        .axis-name-mini {
+            min-width: 50px;
+            font-weight: bold;
+            color: var(--sakura-accent);
+        }
+
+        .axis-level-bar-mini {
+            flex: 1;
+            height: 16px;
+            background: #e0e0e0;
+            border-radius: 8px;
+            margin: 0 8px;
+            overflow: hidden;
+        }
+
+        .axis-level-fill-mini {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sakura-pink) 0%, var(--sakura-accent) 100%);
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+
+        .axis-level-label-mini {
+            min-width: 50px;
+            text-align: right;
+            color: #666;
+            font-size: 11px;
+        }
+
+        .person-stress {
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .compatibility-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .compatibility-detail-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .compatibility-detail-section h5 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .compatibility-detail-section ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .compatibility-detail-section li {
+            margin-bottom: 6px;
+            color: #555;
+            font-size: 13px;
+        }
+
+        .compatibility-advice {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #fff9e6 0%, #fff5f0 100%);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .compatibility-advice h5 {
+            margin: 0 0 8px 0;
+            color: #856404;
+        }
+
+        .compatibility-advice p {
+            margin: 0;
+            color: #664d03;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+        .btn-info:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .compare-check {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .type-D { background: #ff6b6b; color: white; }
+        .type-S { background: #4ecdc4; color: white; }
+        .type-C { background: #45b7d1; color: white; }
+        .type-P { background: #f9ca24; color: #333; }
+
+        @media (max-width: 900px) {
+            .compatibility-persons {
+                flex-direction: column;
+            }
+            .compatibility-vs {
+                transform: rotate(90deg);
+            }
+            .compatibility-details {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -670,6 +901,7 @@
             <input type="text" id="filterName" placeholder="名前で検索...">
             <button class="btn" onclick="loadResults()">検索</button>
             <button class="btn btn-secondary" onclick="clearFilters()">クリア</button>
+            <button class="btn btn-info" id="compareBtn" onclick="openCompatibilityModal()" disabled>💕 相性を見る (2人選択)</button>
         </div>
 
         <div class="results-count" id="resultsCount"></div>
@@ -678,6 +910,7 @@
             <table id="resultsTable">
                 <thead>
                     <tr>
+                        <th style="width: 40px;">比較</th>
                         <th>診断日時</th>
                         <th>名前</th>
                         <th>ステータス</th>
@@ -874,6 +1107,19 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('editModal')">キャンセル</button>
             <button class="btn" onclick="saveEdit()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 相性診断モーダル -->
+<div id="compatibilityModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 1100px;">
+        <div class="modal-header">
+            <h3>💕 相性診断結果</h3>
+            <button class="modal-close" onclick="closeModal('compatibilityModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="compatibilityBody">
+            <!-- 動的に生成 -->
         </div>
     </div>
 </div>
@@ -1097,6 +1343,7 @@ function renderResults(results) {
 
         return `
         <tr>
+            <td><input type="checkbox" class="compare-check" data-id="${r.id}" data-name="${escapeHtml(r.name)}" onchange="updateCompareButton()"></td>
             <td>${formatDate(r.created_at)}</td>
             <td><strong>${escapeHtml(r.name)}</strong></td>
             <td>${renderStatusBadge(r.status)}</td>
@@ -1761,6 +2008,166 @@ switchTab = function(tabName) {
         loadDistribution();
     }
 };
+
+// =========================
+// 相性診断機能
+// =========================
+
+function updateCompareButton() {
+    const checked = document.querySelectorAll('.compare-check:checked');
+    const btn = document.getElementById('compareBtn');
+
+    if (checked.length === 2) {
+        const names = Array.from(checked).map(c => c.dataset.name);
+        btn.disabled = false;
+        btn.textContent = `💕 ${names[0]} × ${names[1]} の相性を見る`;
+    } else if (checked.length > 2) {
+        // 3つ以上選択されたら最新の2つだけ残す
+        const checkboxes = Array.from(checked);
+        checkboxes.slice(0, -2).forEach(c => c.checked = false);
+        updateCompareButton();
+    } else {
+        btn.disabled = true;
+        btn.textContent = `💕 相性を見る (2人選択)`;
+    }
+}
+
+async function openCompatibilityModal() {
+    const checked = document.querySelectorAll('.compare-check:checked');
+    if (checked.length !== 2) {
+        alert('2人を選択してください');
+        return;
+    }
+
+    const id1 = checked[0].dataset.id;
+    const id2 = checked[1].dataset.id;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/compatibility`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id1, id2 })
+        });
+
+        const data = await response.json();
+
+        if (!data.ok) {
+            alert('エラー: ' + (data.error || '相性を取得できませんでした'));
+            return;
+        }
+
+        renderCompatibilityModal(data);
+        document.getElementById('compatibilityModal').classList.remove('hidden');
+
+    } catch (e) {
+        console.error('Compatibility fetch error:', e);
+        alert('相性情報の取得に失敗しました');
+    }
+}
+
+function renderCompatibilityModal(data) {
+    const { compatibility, person1, person2 } = data;
+    const c = compatibility;
+
+    // スコアの色を決定
+    let scoreColor = '#6c757d';
+    if (c.score >= 85) scoreColor = '#e91e63';
+    else if (c.score >= 75) scoreColor = '#4caf50';
+    else if (c.score >= 65) scoreColor = '#2196f3';
+    else if (c.score >= 55) scoreColor = '#ff9800';
+    else scoreColor = '#f44336';
+
+    const html = `
+        <div class="compatibility-container">
+            <!-- 上部: スコア表示 -->
+            <div class="compatibility-score-section">
+                <div class="compatibility-score-circle" style="border-color: ${scoreColor};">
+                    <span class="score-emoji">${c.score_emoji}</span>
+                    <span class="score-number" style="color: ${scoreColor};">${c.score}</span>
+                    <span class="score-label">${c.score_label}</span>
+                </div>
+                <div class="compatibility-summary">
+                    <h4>${c.comments.summary}</h4>
+                    <p class="score-breakdown">
+                        タイプ相性: ${c.type_score}点 / PC距離調整: ${c.adjustment > 0 ? '+' : ''}${c.adjustment}点
+                    </p>
+                </div>
+            </div>
+
+            <!-- 中央: 2人の比較 -->
+            <div class="compatibility-persons">
+                <div class="person-card">
+                    <div class="person-header">
+                        <span class="person-name">${escapeHtml(person1.name)}</span>
+                        <span class="type-badge type-${person1.type}">${getTypeNameJP(person1.type)}</span>
+                    </div>
+                    <div class="person-axis">
+                        ${renderAxisBars(person1.axis_info)}
+                    </div>
+                    <div class="person-stress">
+                        ストレス耐性: ${renderStressBadge(person1.stress_tolerance)}
+                    </div>
+                </div>
+
+                <div class="compatibility-vs">
+                    <span>×</span>
+                </div>
+
+                <div class="person-card">
+                    <div class="person-header">
+                        <span class="person-name">${escapeHtml(person2.name)}</span>
+                        <span class="type-badge type-${person2.type}">${getTypeNameJP(person2.type)}</span>
+                    </div>
+                    <div class="person-axis">
+                        ${renderAxisBars(person2.axis_info)}
+                    </div>
+                    <div class="person-stress">
+                        ストレス耐性: ${renderStressBadge(person2.stress_tolerance)}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下部: 詳細コメント -->
+            <div class="compatibility-details">
+                <div class="compatibility-detail-section">
+                    <h5>✨ 良いところ</h5>
+                    <ul>
+                        ${c.comments.strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="compatibility-detail-section">
+                    <h5>⚠️ 注意点</h5>
+                    <ul>
+                        ${c.comments.challenges.map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="compatibility-advice">
+                    <h5>💡 アドバイス</h5>
+                    <p>${escapeHtml(c.comments.advice)}</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('compatibilityBody').innerHTML = html;
+}
+
+function renderAxisBars(axisInfo) {
+    if (!axisInfo || axisInfo.length === 0) return '<p>軸情報なし</p>';
+
+    return axisInfo.map(a => {
+        const pct = ((a.level_index || 2) + 1) * 20;
+        return `
+            <div class="axis-bar-mini">
+                <span class="axis-name-mini">${a.name || ''}</span>
+                <div class="axis-level-bar-mini">
+                    <div class="axis-level-fill-mini" style="width: ${pct}%"></div>
+                </div>
+                <span class="axis-level-label-mini">${a.level || ''}</span>
+            </div>
+        `;
+    }).join('');
+}
 </script>
 
 </body>
