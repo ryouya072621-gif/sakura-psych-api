@@ -153,6 +153,10 @@ def question_id_to_index(qid: str) -> int:
 # -----------------------------
 # 72問 → 55因子への変換
 # -----------------------------
+# 質問文改善で左右順序が逆転した質問（回答値を反転: 1↔5, 2↔4, 3→3）
+# A25 (index 24), B14 (index 49), B32 (index 67)
+REVERSE_QUESTION_INDICES = [24, 49, 67]
+
 def build_55factor_features_from_answers(answers):
     if not isinstance(answers, (list, tuple)):
         raise ValueError("answers は list か tuple で渡してください。")
@@ -162,6 +166,11 @@ def build_55factor_features_from_answers(answers):
         vals = [float(x) for x in answers]
     except Exception:
         raise ValueError("answers 内に数値に変換できない値があります。")
+
+    # 左右順序が逆転した質問の回答値を反転
+    for idx in REVERSE_QUESTION_INDICES:
+        if 0 <= idx < len(vals):
+            vals[idx] = 6 - vals[idx]  # 1→5, 2→4, 3→3, 4→2, 5→1
 
     df = question_factor_df.copy()
     df.columns = [str(c).strip().replace("\ufeff", "") for c in df.columns]
