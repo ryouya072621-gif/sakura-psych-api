@@ -459,41 +459,64 @@ def calculate_consistency_score(answers: list) -> dict:
 # =========================
 # ストレス耐性10段階計算
 # =========================
+# ストレス関連因子の統計データ（mean_std_55.xlsxより）
+STRESS_FACTOR_STATS = {
+    "stress_tolerance": {"mean": 3.002, "std": 1.009},
+    "stress_recovery": {"mean": 3.002, "std": 1.004},
+    "emotional_stability": {"mean": 2.999, "std": 0.506},
+    "emotional_control": {"mean": 2.996, "std": 1.012},
+    "calmness": {"mean": 3.001, "std": 1.012},
+    "anxiety_tendency": {"mean": 2.990, "std": 1.013},  # 逆転項目
+    "stress_sensitivity": {"mean": 3.001, "std": 1.009},  # 逆転項目
+}
+
+# 因子の重み（重要度に応じて調整）
+STRESS_FACTOR_WEIGHTS = {
+    "stress_tolerance": 1.5,      # 直接的なストレス耐性
+    "stress_recovery": 1.3,       # 回復力
+    "emotional_stability": 1.2,   # 感情安定性
+    "emotional_control": 1.0,     # 感情制御
+    "calmness": 1.0,              # 冷静さ
+    "anxiety_tendency": 1.2,      # 不安傾向
+    "stress_sensitivity": 1.0,    # ストレス感受性
+}
+
 def calculate_stress_tolerance(features_55: dict, pc: dict) -> int:
     """
     55因子とPCスコアからストレス耐性を10段階で計算
+    Z-scoreを使用して標準化し、差が出やすくする
     """
-    # ストレス関連因子
-    stress_factors = [
-        "stress_tolerance",
-        "stress_recovery", 
-        "emotional_stability",
-        "emotional_control",
-        "calmness",
-        "anxiety_tendency",  # 逆転項目
-        "stress_sensitivity",  # 逆転項目
-    ]
-    
-    score = 0
-    count = 0
-    
-    for factor in stress_factors:
+    z_scores = []
+    weights = []
+
+    for factor, stats in STRESS_FACTOR_STATS.items():
         if factor in features_55:
             val = features_55[factor]
-            # 逆転項目は5から引く
+
+            # 逆転項目は値を反転（高い値が悪い→低い値が悪いに変換）
             if factor in ["anxiety_tendency", "stress_sensitivity"]:
                 val = 6 - val
-            score += val
-            count += 1
-    
-    if count > 0:
-        avg = score / count
-        # 1-5スケールを1-10スケールに変換
-        stress_10 = int(round((avg - 1) * 2.25 + 1))
-        stress_10 = max(1, min(10, stress_10))
-        return stress_10
-    
-    return 5  # デフォルト
+
+            # Z-score計算（標準偏差で正規化）
+            z = (val - stats["mean"]) / stats["std"] if stats["std"] > 0 else 0
+
+            z_scores.append(z)
+            weights.append(STRESS_FACTOR_WEIGHTS.get(factor, 1.0))
+
+    if not z_scores:
+        return 5  # デフォルト
+
+    # 重み付き平均Z-score
+    weighted_z = sum(z * w for z, w in zip(z_scores, weights)) / sum(weights)
+
+    # Z-scoreを10段階に変換
+    # Z=-2.0 → 1点, Z=0 → 5.5点, Z=+2.0 → 10点
+    # より差が出やすいスケーリング
+    stress_10 = 5.5 + weighted_z * 2.0
+    stress_10 = int(round(stress_10))
+    stress_10 = max(1, min(10, stress_10))
+
+    return stress_10
 
 
 # =========================
